@@ -47,10 +47,12 @@ class NotAlone(AbstractApp):
     for tokenNamePair in tokenNamePairs:
       if tokenNamePair[0] is not None:
         client.set_access_token(tokenNamePair[0].token)
-        client.checkins.add(newCheckin)
-        # check for error?
-        successNames.append(tokenNamePair[1])
-
+        try:
+          client.checkins.add(newCheckin)
+          successNames.append(tokenNamePair[1])
+        except Exception as inst:
+          logging.error('Failed to check-in user %s-%s' % (tokenNamePair[1], tokenNamePair[0].fs_id))
+        
     client.set_access_token(access_token) # restore token to original user
     message = "You just checked-in: %s" % ", ".join(successNames)
     self.makeContentInfo( checkin_json = checkin_json,
