@@ -22,7 +22,7 @@ CONFIG = {
   'site_description': 'We know who you were with last summer',
   # If true, we use local_server, and log actions instead of POSTing to foursquare
   # Be sure to set this to false when you actually want to deploy.
-  'local_dev': True,
+  'local_dev': False,
   # AppEngine debug mode
   'debug': True,
   # These can either be a path (on this server), or an external URI

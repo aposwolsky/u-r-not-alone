@@ -8,29 +8,26 @@ try: import simplejson as json
 except ImportError: import json
 
 from abstract_app import AbstractApp
+from model import UserToken, ContentInfo
 
 
 class NotAlone(AbstractApp):
-  REACTION_STRINGS = {'amazing' : 'amazing.',
-                      'death'   : 'death.'}
-  
   def contentGet(self, client, content_info):
     content_json = json.loads(content_info.content)
     fsqCallback = self.request.get('fsqCallback')
     if content_info.reply_id:
       content_json["content_id"] = content_info.content_id
       content_json["fsqCallback"] = fsqCallback
-      path = os.path.join(os.path.dirname(__file__), 'reply.html')
-      self.response.out.write(template.render(path, content_json))
-      return
+      if len(content_json['connected']) == 0:
+        path = os.path.join(os.path.dirname(__file__), 'instructions.html')
+        self.response.out.write(template.render(path, content_json))
+      else:
+        path = os.path.join(os.path.dirname(__file__), 'reply.html')
+        self.response.out.write(template.render(path, content_json))
     
-    if content_info.post_id:
-      reaction = content_json['reaction']
-      content_json['reaction_string'] = self.REACTION_STRINGS[reaction]
-      path = os.path.join(os.path.dirname(__file__), 'post.html')
-      self.response.out.write(template.render(path, content_json))
-      
-  
+    elif content_info.post_id:
+      logging.error('Received unexpected post content id');
+
   def appPost(self, client):
     sci = self.request.get('source_content_id')
     source_content_info = self.fetchContentInfo(sci)
@@ -38,24 +35,26 @@ class NotAlone(AbstractApp):
     
     client.set_access_token(access_token)
     checkin_json = client.checkins(source_content_info.checkin_id)['checkin']
+    venueId = checkin_json['venue']['id']
+    shout = '%s says: I am not alone' % checkin_json['user']['firstName']
+    newCheckin = dict({'venueId': venueId, 'broadcast': 'public', 'shout': shout})
+    if 'event' in checkin_json:
+      newCheckin['eventId'] = checkin_json['event']['id']
 
-    reaction = None
-    if self.request.get('amazing'):
-      reaction = "amazing"
-    elif self.request.get('death'):
-      reaction = "death"
-    else:
-      logging.error('Bad appPost request: %s' % self.request)
-      self.error(400)
-      return
-    reaction_string = self.REACTION_STRINGS[reaction]
-    name = client.users()['user']['firstName']
-    item = json.loads(source_content_info.content)['item']
-    message = "I ordered the %s; it was %s" % (item, reaction_string)
+    successNames = []
+    connectedTokens = json.loads(source_content_info.content)['connected']
+    tokenNamePairs = [(UserToken.get_by_fs_id(token[0]), token[1]) for token in connectedTokens]
+    for tokenNamePair in tokenNamePairs:
+      if tokenNamePair[0] is not None:
+        client.set_access_token(tokenNamePair[0].token)
+        client.checkins.add(newCheckin)
+        # check for error?
+        successNames.append(tokenNamePair[1])
+
+    client.set_access_token(access_token) # restore token to original user
+    message = "You just checked-in: %s" % ", ".join(successNames)
     self.makeContentInfo( checkin_json = checkin_json,
-                          content = json.dumps({'item': item,
-                                                'name': name,
-                                                'reaction': reaction}),
+                          content = json.dumps({'successNames': successNames, 'message': message}),
                           text = message,
                           post = True)
 
@@ -68,29 +67,36 @@ class NotAlone(AbstractApp):
   def checkinTaskQueue(self, client, checkin_json):
     venue_id = checkin_json['venue']['id']
     venue_json = client.venues(venue_id)['venue']
-    friendIds = [entity['id'] for entity in checkin_json['entities'] if entity['type'] == 'user']
-    friends = [client.users(friendId)['user'] for friendId in friendIds] # filter out non-friends
-    tokens = [(friend, UserToken.get_by_fs_id(friend['id'])) for friend in friends]
-    connectedTokens = [(token[0]['id'], token[0]['firstName']) for token in tokens if token[1] is not None]
-    unconnectedTokens = [(token[0]['id'], token[0]['firstName']) for token in tokens if token[1] is None]
-    logging.info('{0} -> {1}'.format(connectedTokens, unconnectedTokens))
-    #    if not 'menu' in venue_json:
-    # logging.info('No menu found for %s' % venue_json['name'])
-    # return
-    
-    menus_json = client.venues.menu(venue_id)['menu']['menus']
-    count = menus_json['count']
-    index = random.randrange(count)
-    menus_json = menus_json['items'][index]['entries']
-    count = menus_json['count']
-    index = random.randrange(count)
-    menus_json = menus_json['items'][index]['entries']
-    count = menus_json['count']
-    index = random.randrange(count)
-    item = menus_json['items'][index]['name']
+    if 'entities' in checkin_json:
+      mentionedIds = [entity['id'] for entity in checkin_json['entities'] if entity['type'] == 'user']
+      friends = [friend for friend in client.users.friends()['friends']['items'] if friend['id'] in mentionedIds]
+      tokens = [(friend, UserToken.get_by_fs_id(friend['id'])) for friend in friends]
+      connectedTokenNamePairs = [(token[0]['id'], token[0]['firstName']) for token in tokens if token[1] is not None]
+      unconnectedTokenNamePairs = [(token[0]['id'], token[0]['firstName']) for token in tokens if token[1] is None]
+      logging.info('{0} -> {1}'.format(connectedTokenNamePairs, unconnectedTokenNamePairs))
+    else:
+      connectedTokenNamePairs = []
+      unconnectedTokenNamePairs = []
+
+    connectedFriendNames = ", ".join([y[1] for y in connectedTokenNamePairs])
+    unconnectedFriendNames = ", ".join([y[1] for y in unconnectedTokenNamePairs])
+                                
+                                     
+    if len(connectedTokenNamePairs) == 0 and len(unconnectedTokenNamePairs) == 0:
+      message = 'Mention your friends in your check-in and you can help them check in!'
+    elif len(connectedTokenNamePairs) == 0 and len(unconnectedTokenNamePairs) > 0:
+      message = 'Tell your lazy friends (%s) to connect the app so you may help them check in.' % unconnectedFriendNames
+    elif len(connectedTokenNamePairs) > 0 and len(unconnectedTokenNamePairs) > 0:
+      message = 'Automatic check-in for some of your friends (%s) but not all (%s) since they have not connected the app' % (
+                connectedFriendNames, unconnectedFriendNames)
+    else: # connectedTokenNamePairs > 0 and unconnectedTokenNamePairs == 0
+      message = 'Automatic check-in for your friends (%s)' % connectedFriendNames
       
-    message = 'Dare you to get the %s' % item
     self.makeContentInfo( checkin_json = checkin_json,
-                          content = json.dumps({'item': item}),
+                          content = json.dumps({'connected': connectedTokenNamePairs,
+                                                'unconnected': unconnectedTokenNamePairs,
+                                                'title': message}),
                           text = message,
-                          reply = True)
+                          reply = True)      
+      
+
