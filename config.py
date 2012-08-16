@@ -11,7 +11,7 @@ CONFIG = {
   # OAuth client ID. Must match what you set at https://foursquare.com/oauth.
   'client_id': 'N1FUZI5I2JLLMMYWILQYAG0DN5DQGPXPRY3BCFJNF0WSXOR0',
   # OAuth callback/redirect URI. Must match what you set at https://foursquare.com/oauth.
-  'redirect_uri': 'http://u-r-not-alone.appspot.com/oauth', # (server)
+  'redirect_uri': '%s/oauth', # (server)
   # Format string to serve URL content out of. Not necessarily required.
   'content_uri': '%s/content?content_id=%s', # (server, content_id)
   # The foursquare API version string to pass. See: https://developer.foursquare.com/overview/versioning
@@ -22,7 +22,7 @@ CONFIG = {
   'site_description': 'We know who you were with last summer',
   # If true, we use local_server, and log actions instead of POSTing to foursquare
   # Be sure to set this to false when you actually want to deploy.
-  'local_dev': False,
+  'local_dev': True,
   # AppEngine debug mode
   'debug': True,
   # These can either be a path (on this server), or an external URI
@@ -35,5 +35,5 @@ CONFIG = {
 
 # Replace 'None' with the class object of your app. It must inherit from the
 # provided AbstractApp class.
-# import  YOUR_CLASS_HERE
-APP_CLASS = None
+from notalone.notalone import NotAlone
+APP_CLASS = NotAlone

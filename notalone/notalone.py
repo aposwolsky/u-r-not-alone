@@ -10,7 +10,7 @@ except ImportError: import json
 from abstract_app import AbstractApp
 
 
-class Menulette(AbstractApp):
+class NotAlone(AbstractApp):
   REACTION_STRINGS = {'amazing' : 'amazing.',
                       'death'   : 'death.'}
   
@@ -68,10 +68,15 @@ class Menulette(AbstractApp):
   def checkinTaskQueue(self, client, checkin_json):
     venue_id = checkin_json['venue']['id']
     venue_json = client.venues(venue_id)['venue']
-    
-    if not 'menu' in venue_json:
-      logging.info('No menu found for %s' % venue_json['name'])
-      return
+    friendIds = [entity['id'] for entity in checkin_json['entities'] if entity['type'] == 'user']
+    friends = [client.users(friendId)['user'] for friendId in friendIds] # filter out non-friends
+    tokens = [(friend, UserToken.get_by_fs_id(friend['id'])) for friend in friends]
+    connectedTokens = [(token[0]['id'], token[0]['firstName']) for token in tokens if token[1] is not None]
+    unconnectedTokens = [(token[0]['id'], token[0]['firstName']) for token in tokens if token[1] is None]
+    logging.info('{0} -> {1}'.format(connectedTokens, unconnectedTokens))
+    #    if not 'menu' in venue_json:
+    # logging.info('No menu found for %s' % venue_json['name'])
+    # return
     
     menus_json = client.venues.menu(venue_id)['menu']['menus']
     count = menus_json['count']

@@ -1,1 +1,268 @@
-{"id":"4fe89e686de480929d44f7b3","createdAt":1340644968,"type":"checkin","private":true,"visibility":"private","shout":"This is a shout","timeZone":"America\/New_York","timeZoneOffset":-240,"user":{"id":"606","firstName":"Akshay","lastName":"Patil","relationship":"self","photo":"https:\/\/is0.4sqi.net\/userpix_thumbs\/YEOVWGYHWG5S05IP.jpg","tips":{"count":106},"lists":{"groups":[{"type":"created","count":13,"items":[]}]},"gender":"male","homeCity":"New York, NY","bio":"Mayor of your heart","contact":{"phone":"3109779063","email":"ak@foursquare.com","twitter":"ak","facebook":"702855"}},"venue":{"id":"49cbcc5cf964a5201d591fe3","name":"Num Pang Sandwich Shop","contact":{"phone":"2122553271","formattedPhone":"(212) 255-3271","twitter":"NumPang"},"location":{"address":"21 E 12th St.","crossStreet":"btwn 5th Ave. & University Pl.","lat":40.733945961577845,"lng":-73.99320973426613,"postalCode":"10003","city":"New York","state":"NY","country":"United States","cc":"US"},"categories":[{"id":"4bf58dd8d48988d1c5941735","name":"Sandwich Place","pluralName":"Sandwich Places","shortName":"Sandwiches","icon":"https:\/\/foursquare.com\/img\/categories\/food\/sandwiches.png","parents":["Food"],"primary":true}],"verified":true,"stats":{"checkinsCount":8941,"usersCount":4586,"tipCount":191},"url":"http:\/\/www.numpangnyc.com","likes":{"count":0,"groups":[]},"menu":{"type":"foodAndBeverage","url":"https:\/\/foursquare.com\/v\/num-pang-sandwich-shop\/49cbcc5cf964a5201d591fe3\/menu","mobileUrl":"https:\/\/foursquare.com\/v\/49cbcc5cf964a5201d591fe3\/device_menu"},"beenHere":{"count":0}}}
+  {
+      "overlaps": {
+        "count": 3, 
+        "items": [
+          {
+            "createdAt": 1345068618, 
+            "timeZone": "America/Los_Angeles", 
+            "type": "checkin", 
+            "id": "502c1e4ae4b0d7ad1dd37c60", 
+            "timeZoneOffset": -420, 
+            "user": {
+              "bio": "", 
+              "gender": "male", 
+              "firstName": "Benjy", 
+              "relationship": "friend", 
+              "lastName": "Weinberger", 
+              "lists": {
+                "groups": [
+                  {
+                    "count": 3, 
+                    "items": [], 
+                    "type": "created"
+                  }
+                ]
+              }, 
+              "homeCity": "San Francisco, CA", 
+              "contact": {
+                "twitter": "benjy", 
+                "facebook": "635142999", 
+                "email": "benjyw@gmail.com"
+              }, 
+              "photo": "https://is1.4sqi.net/userpix_thumbs/PBSL05XKSHRZO5UL.jpg", 
+              "tips": {
+                "count": 40
+              }, 
+              "id": "475312"
+            }
+          }, 
+          {
+            "shout": "Hack day juice.", 
+            "createdAt": 1345071436, 
+            "timeZone": "America/Los_Angeles", 
+            "type": "checkin", 
+            "id": "502c294ce4b0fe00a3ac8a5f", 
+            "timeZoneOffset": -420, 
+            "user": {
+              "bio": "engineer", 
+              "gender": "male", 
+              "firstName": "Scott", 
+              "relationship": "friend", 
+              "lastName": "Snyder", 
+              "lists": {
+                "groups": [
+                  {
+                    "count": 2, 
+                    "items": [], 
+                    "type": "created"
+                  }
+                ]
+              }, 
+              "homeCity": "San Francisco, CA", 
+              "contact": {
+                "phone": "9174756196", 
+                "twitter": "sortedaffairs", 
+                "email": "juveduke@gmail.com"
+              }, 
+              "photo": "https://is0.4sqi.net/userpix_thumbs/BX1SBFOHCOEISJPF.jpg", 
+              "tips": {
+                "count": 15
+              }, 
+              "id": "14080826"
+            }
+          }, 
+          {
+            "shout": "late check-in", 
+            "createdAt": 1345069522, 
+            "timeZone": "America/Los_Angeles", 
+            "type": "checkin", 
+            "id": "502c21d2e4b021588d596626", 
+            "timeZoneOffset": -420, 
+            "user": {
+              "bio": "how is babby formed?", 
+              "gender": "male", 
+              "firstName": "Nate", 
+              "relationship": "friend", 
+              "lastName": "Folkert", 
+              "lists": {
+                "groups": [
+                  {
+                    "count": 26, 
+                    "items": [], 
+                    "type": "created"
+                  }
+                ]
+              }, 
+              "homeCity": "Brooklyn, NY", 
+              "contact": {
+                "phone": "4155951126", 
+                "twitter": "nfolkert", 
+                "facebook": "203195", 
+                "email": "nfolkert@gmail.com"
+              }, 
+              "photo": "https://is0.4sqi.net/userpix_thumbs/0FQGVWKEVEK20I0V.jpg", 
+              "tips": {
+                "count": 152
+              }, 
+              "id": "47321"
+            }
+          }
+        ]
+      }, 
+      "likes": {
+        "count": 0, 
+        "groups": []
+      }, 
+      "like": false, 
+      "source": {
+        "url": "https://foursquare.com/download/#/android", 
+        "name": "foursquare for Android"
+      }, 
+      "posts": {
+        "count": 0, 
+        "textCount": 0
+      }, 
+      "comments": {
+        "count": 1, 
+        "items": [
+          {
+            "text": "Does it help you make the most of where you are?", 
+            "id": "502c39c9e4b03fdb3d33f959", 
+            "createdAt": 1345075657, 
+            "user": {
+              "bio": "I work for foursquare in analytics & marketing. I am obsessed with tech, exploration, and will travel far for the best baguette.", 
+              "gender": "male", 
+              "firstName": "Rafi", 
+              "relationship": "friend", 
+              "lastName": "Syed", 
+              "lists": {
+                "groups": [
+                  {
+                    "count": 22, 
+                    "items": [], 
+                    "type": "created"
+                  }
+                ]
+              }, 
+              "homeCity": "New York, NY", 
+              "contact": {
+                "phone": "5106047374"
+              }, 
+              "photo": "https://is0.4sqi.net/userpix_thumbs/YKNGED2ZPGLK30P5.jpg", 
+              "tips": {
+                "count": 79
+              }, 
+              "id": "953970"
+            }
+          }
+        ]
+      }, 
+      "venue": {
+        "verified": true, 
+        "name": "foursquare SF", 
+        "url": "http://foursquare.com", 
+        "specials": [], 
+        "contact": {
+          "twitter": "foursquare"
+        }, 
+        "location": {
+          "city": "San Francisco", 
+          "cc": "US", 
+          "country": "United States", 
+          "postalCode": "94107", 
+          "state": "CA", 
+          "crossStreet": "btwn 4th & 5th St", 
+          "address": "363 Clementina St", 
+          "lat": 37.78121322783782, 
+          "lng": -122.40297317504883
+        }, 
+        "beenHere": {
+          "count": 0
+        }, 
+        "stats": {
+          "tipCount": 62, 
+          "checkinsCount": 5600, 
+          "usersCount": 1484
+        }, 
+        "id": "4de0117c45dd3eae8764d6ac", 
+        "categories": [
+          {
+            "pluralName": "Tech Startups", 
+            "primary": true, 
+            "name": "Tech Startup", 
+            "shortName": "Tech Startup", 
+            "id": "4bf58dd8d48988d125941735", 
+            "icon": {
+              "prefix": "https://foursquare.com/img/categories/shops/technology_", 
+              "name": ".png", 
+              "sizes": [
+                32, 
+                44, 
+                64, 
+                88, 
+                256
+              ]
+            }
+          }
+        ], 
+        "likes": {
+          "count": 0, 
+          "groups": []
+        }
+      }, 
+      "photos": {
+        "count": 0, 
+        "items": []
+      }, 
+      "entities": [
+        {
+          "indices": [
+            14, 
+            21
+          ], 
+          "type": "user", 
+          "id": "6588451"
+        }
+      ], 
+      "shout": "I'm here with Norbert writing an app", 
+      "score": {
+        "total": 0, 
+        "scores": []
+      }, 
+      "timeZoneOffset": -420, 
+      "replies": {
+        "count": 0
+      }, 
+      "timeZone": "America/Los_Angeles", 
+      "type": "checkin", 
+      "id": "502c38d9e4b042ed6df85b36", 
+      "createdAt": 1345075417, 
+      "user": {
+        "bio": "", 
+        "gender": "male", 
+        "firstName": "Adam", 
+        "relationship": "self", 
+        "lastName": "Poswolsky", 
+        "lists": {
+          "groups": [
+            {
+              "count": 2, 
+              "items": [], 
+              "type": "created"
+            }
+          ]
+        }, 
+        "homeCity": "New York, NY", 
+        "contact": {
+          "phone": "5164455272", 
+          "twitter": "abp", 
+          "facebook": "309660", 
+          "email": "adam@poswolsky.com"
+        }, 
+        "photo": "https://is0.4sqi.net/userpix_thumbs/WE4FYRBUM2I3KO1H.jpg", 
+        "tips": {
+          "count": 34
+        }, 
+        "id": "5214695"
+      }
+    }
