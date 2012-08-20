@@ -36,8 +36,9 @@ class NotAlone(AbstractApp):
     client.set_access_token(access_token)
     checkin_json = client.checkins(source_content_info.checkin_id)['checkin']
     venueId = checkin_json['venue']['id']
-    shout = '%s says: I am not alone' % checkin_json['user']['firstName']
-    newCheckin = dict({'venueId': venueId, 'broadcast': 'public', 'shout': shout})
+    sourceName = checkin_json['user']['firstName']
+    successComment = 'Check-in by %s.' % sourceName
+    newCheckin = dict({'venueId': venueId, 'broadcast': 'public'})
     if 'event' in checkin_json:
       newCheckin['eventId'] = checkin_json['event']['id']
 
@@ -48,19 +49,26 @@ class NotAlone(AbstractApp):
       if tokenNamePair[0] is not None:
         client.set_access_token(tokenNamePair[0].token)
         try:
-          client.checkins.add(newCheckin)
+          friendCheckin = client.checkins.add(newCheckin)['checkin']
+          if 'user' not in friendCheckin:
+            friendCheckin['user'] = {'id': tokenNamePair[0].fs_id, 'firstName': tokenNamePair[1]}
           successNames.append(tokenNamePair[1])
+          self.makeContentInfo( checkin_json = friendCheckin,
+                                content = json.dumps({'checkinFrom': sourceName}),
+                                text = successComment,
+                                post = True)
         except Exception as inst:
           logging.error('Failed to check-in user %s-%s' % (tokenNamePair[1], tokenNamePair[0].fs_id))
         
     client.set_access_token(access_token) # restore token to original user
-    message = "You just checked-in: %s" % ", ".join(successNames)
-    self.makeContentInfo( checkin_json = checkin_json,
-                          content = json.dumps({'successNames': successNames, 'message': message}),
-                          text = message,
-                          post = True)
+    if (len(successNames) > 0):
+      message = "You just checked-in: %s" % ", ".join(successNames)
+      self.makeContentInfo( checkin_json = checkin_json,
+                            content = json.dumps({'successNames': successNames, 'message': message}),
+                            text = message,
+                            post = True)
 
-    # TODO(ak): Use fsqCallback
+
     fsqCallback = self.request.get('fsqCallback')
     logging.debug('fsqCallback = %s' % fsqCallback)
     self.redirect(fsqCallback)

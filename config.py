@@ -17,9 +17,9 @@ CONFIG = {
   # The foursquare API version string to pass. See: https://developer.foursquare.com/overview/versioning
   'api_version': '20120608',
   # A name for the hompage and titles.
-  'site_name': 'U R Not Alone',
+  'site_name': 'Here with Friends',
   # A description for the home page
-  'site_description': 'We know who you were with last summer',
+  'site_description': 'After you check-in to a location, use this app to check-in the friends that are with you.',
   # If true, we use local_server, and log actions instead of POSTing to foursquare
   # Be sure to set this to false when you actually want to deploy.
   'local_dev': False,
