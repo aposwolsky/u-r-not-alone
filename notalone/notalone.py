@@ -58,7 +58,7 @@ class NotAlone(AbstractApp):
                                 text = successComment,
                                 post = True)
         except Exception as inst:
-          logging.error('Failed to check-in user %s-%s' % (tokenNamePair[1], tokenNamePair[0].fs_id))
+          logging.error('Failed to check in user %s-%s' % (tokenNamePair[1], tokenNamePair[0].fs_id))
         
     client.set_access_token(access_token) # restore token to original user
     if (len(successNames) > 0):
@@ -95,12 +95,12 @@ class NotAlone(AbstractApp):
     if len(connectedTokenNamePairs) == 0 and len(unconnectedTokenNamePairs) == 0:
       message = 'Mention your friends in your check-in and you can help them check in!'
     elif len(connectedTokenNamePairs) == 0 and len(unconnectedTokenNamePairs) > 0:
-      message = 'Tell your lazy friends (%s) to connect the app so you may help them check in.' % unconnectedFriendNames
+      message = 'Tell your friends (%s) to connect the app so you may help them check in.' % unconnectedFriendNames
     elif len(connectedTokenNamePairs) > 0 and len(unconnectedTokenNamePairs) > 0:
-      message = 'Automatic check-in for some of your friends (%s) but not all (%s) since they have not connected the app' % (
+      message = 'Check in some of your friends (%s) but not all (%s) since they have not connected the app' % (
                 connectedFriendNames, unconnectedFriendNames)
     else: # connectedTokenNamePairs > 0 and unconnectedTokenNamePairs == 0
-      message = 'Automatic check-in for your friends (%s)' % connectedFriendNames
+      message = 'Check in your friends (%s)' % connectedFriendNames
       
     self.makeContentInfo( checkin_json = checkin_json,
                           content = json.dumps({'connected': connectedTokenNamePairs,
