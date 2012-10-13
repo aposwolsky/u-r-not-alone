@@ -39,6 +39,9 @@ class AbstractApp(webapp.RequestHandler):
     elif self.request.path.startswith('/friend-checkin'):
       client = utils.makeFoursquareClient()
       return self.friendCheckin(client)
+    elif self.request.path.startswith('/_friend-checkin'):
+      client = utils.makeFoursquareClient()
+      return self.friendCheckinTaskQueue(client)
 
     client = utils.makeFoursquareClient()
     return self.appPost(client)
@@ -69,6 +72,11 @@ class AbstractApp(webapp.RequestHandler):
 
   def friendCheckin(self, client):
     logging.warning('friendCheckin stub called')
+    self.error(404)
+    return
+
+  def friendCheckinTaskQueue(self, client):
+    logging.warning('friendCheckinTaskQueue stub called')
     self.error(404)
     return
 

@@ -2,6 +2,7 @@ import logging
 import os
 import random
 
+from google.appengine.api import taskqueue
 from google.appengine.ext.webapp import template
 
 try: import simplejson as json
@@ -37,6 +38,13 @@ class NotAlone(AbstractApp):
 
 
   def friendCheckin(self, client):
+    taskqueue.add(url='/_friend-checkin',
+                  params={'source_content_id': self.request.get('source_content_id'),
+                          'selected': self.request.get('selected')})
+    self.response.out.write(json.dumps({'status': 'ok'}))
+
+
+  def friendCheckinTaskQueue(self, client):
     sci = self.request.get('source_content_id')
     logging.debug('source_content_id = %s' % sci)
 
@@ -90,7 +98,7 @@ class NotAlone(AbstractApp):
     logging.info('%s (%s) checked in: %s' % (sourceName, sourceId, successNamesStr))
     self.response.out.write(json.dumps({'successNames': successNames}))
 
-  
+
   def checkinTaskQueue(self, client, checkin_json):
     venue_id = checkin_json['venue']['id']
     venue_json = client.venues(venue_id)['venue']
