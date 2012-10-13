@@ -7,7 +7,7 @@ CONFIG = {
   # The server name for local_dev mode. Make sure the port matches what you use.
   'local_server': 'http://localhost:8080',
   # Server name for your deployed AppEngine instance
-  'prod_server': 'http://u-r-not-alone-staging.appspot.com',
+  'prod_server': 'https://u-r-not-alone-staging.appspot.com',
   # OAuth client ID. Must match what you set at https://foursquare.com/oauth.
   'client_id': '24DCKMMARESCJG4PXW1OCT5J4SASQBXIL34OF21IF3UQPYO0',
   # OAuth callback/redirect URI. Must match what you set at https://foursquare.com/oauth.

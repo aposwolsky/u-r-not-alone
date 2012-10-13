@@ -133,6 +133,7 @@ application = webapp.WSGIApplication([('/oauth.*', OAuth),
                                       ('/checkin', ProcessCheckin),
                                       ('/isAuthd', IsAuthd),
                                       ('/', HomePage),
+                                      ('/resources/', HomePage),
                                       ('/_checkin', APP_CLASS),
                                       ('/.*', APP_CLASS)],
                                      debug=CONFIG['debug'])

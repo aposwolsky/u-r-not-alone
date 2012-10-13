@@ -12,14 +12,14 @@ import utils
 class AbstractApp(webapp.RequestHandler):
   def get(self):
     client = utils.makeFoursquareClient()
-
     content_id = self.request.get('content_id')
     if content_id:
       content_info = ContentInfo.all().filter('content_id =', content_id).get()
       if not content_info:
         self.error(404)
         return
-      return self.contentGet(client, content_info)
+      elif self.request.path.startswith('/contentjson'):
+        return self.contentGetJson(client, content_info)
 
     return self.appGet(client)
 
@@ -32,10 +32,13 @@ class AbstractApp(webapp.RequestHandler):
       user_id = checkin_json['user']['id']
       access_token = self.fetchAccessToken(user_id)
       if not access_token:
-        logging.warning('Recieved push for unknown user_id {}'.format(user_id))
+        logging.warning('Received push for unknown user_id {}'.format(user_id))
         return
       client = utils.makeFoursquareClient(access_token)
       return self.checkinTaskQueue(client, checkin_json)
+    elif self.request.path.startswith('/friend-checkin'):
+      client = utils.makeFoursquareClient()
+      return self.friendCheckin(client)
 
     client = utils.makeFoursquareClient()
     return self.appPost(client)
@@ -52,12 +55,11 @@ class AbstractApp(webapp.RequestHandler):
     """Serves a simple homepage where the user can authorize the app"""
 
 
-  def contentGet(self, client, content_info):
+  def contentGetJson(self, client, content_info):
     """Handler for content related GET requests"""
-    logging.warning('contentGet stub called')
+    logging.warning('contentGetJson stub called')
     self.error(404)
     return
-
 
   def appPost(self, client):
     """Generic handler for POST requests"""
@@ -65,6 +67,10 @@ class AbstractApp(webapp.RequestHandler):
     self.error(404)
     return
 
+  def friendCheckin(self, client):
+    logging.warning('friendCheckin stub called')
+    self.error(404)
+    return
 
   def checkinTaskQueue(self, authenticated_client, checkin_json):
     """Handler for check-in task queue"""

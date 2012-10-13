@@ -19,6 +19,11 @@ handlers:
   script: main.py
   secure: always
 
+- url: /content
+  static_files: notalone/reply.html
+  upload: notalone/reply.html
+  secure: always
+
 - url: /.*favicon.ico
   static_files: img/favicon.ico
   upload: img/favicon.ico
@@ -26,6 +31,9 @@ handlers:
 
 - url: /img
   static_dir: img
+
+- url: /resources
+  static_dir: resources
 
 - url: /.*
   script: main.py
