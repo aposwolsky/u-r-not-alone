@@ -10,9 +10,10 @@ except ImportError: import json
 
 from foursquare import InvalidAuth
 
-from config import CONFIG, APP_CLASS
+from config import CONFIG
 from foursquare_secrets import SECRETS
 from model import UserSession, UserToken
+from notalone import NotAlone
 import utils
 
 from google.appengine.api import taskqueue
@@ -134,8 +135,8 @@ application = webapp.WSGIApplication([('/oauth.*', OAuth),
                                       ('/isAuthd', IsAuthd),
                                       ('/', HomePage),
                                       ('/resources/', HomePage),
-                                      ('/_checkin', APP_CLASS),
-                                      ('/.*', APP_CLASS)],
+                                      ('/_checkin', NotAlone),
+                                      ('/.*', NotAlone)],
                                      debug=CONFIG['debug'])
 
 def main():

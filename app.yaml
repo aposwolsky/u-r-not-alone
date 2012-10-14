@@ -20,8 +20,8 @@ handlers:
   secure: always
 
 - url: /content
-  static_files: notalone/reply.html
-  upload: notalone/reply.html
+  static_files: reply.html
+  upload: reply.html
   secure: always
 
 - url: /.*favicon.ico

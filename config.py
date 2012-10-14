@@ -32,8 +32,3 @@ CONFIG = {
   # Application Level Configuration
   # Feel free to add new config parameters here...
 }
-
-# Replace 'None' with the class object of your app. It must inherit from the
-# provided AbstractApp class.
-from notalone.notalone import NotAlone
-APP_CLASS = NotAlone
