@@ -2,6 +2,7 @@
 // expects this.selected to contain a list of friend objects selected
 //         this.alLFriends contains all possible friends
 //         this.selectedContainer contains a container for a list of selected friends
+//         this.clearSelectedButton is the button to clear all selections
 //         this.submitButton is the submit button
 
 getJson = function(input) {
@@ -42,18 +43,26 @@ submitFriendCheckinForm = function() {
   }, this));
 };
 
-updateSelectedButtonContainer = function() {
+updateSelectedInformation = function() {
   var numSelected = this.selected.length;
   this.submitButton.prop("value", "Check them in! (" + numSelected + " selected)").button("refresh");
   this.selectedContainer.empty();
   if (numSelected > 0) {
     var names = _(this.selected).map(function(x){return x.name;}, this).join(", ");
-    this.selectedContainer.append('<span class="bold">Selected:</span> ' + names);
+    this.selectedContainer.append(names);
     this.submitButton.button("enable");
+    this.clearSelectedButton.show();
   } else {
-    this.selectedContainer.append('<span class="bold">Selected:</span> (none)');
+    this.selectedContainer.append('(none)');
     this.submitButton.button("disable");
+    this.clearSelectedButton.hide();
   }
+};
+
+clearAllSelected = function() {
+  _.each(this.selected, function(selectedObj) {
+    removeFriend(selectedObj.id);
+  }, this);
 };
 
 // precondition: this.selected contains a list of friend objects selected and this.allFriends contains all possible
@@ -67,7 +76,7 @@ addFriend = function(userId) {
     if (!$('#' + userId).prop("checked")) {
       $('#' + userId).prop("checked", true).checkboxradio("refresh");
     }
-    updateSelectedButtonContainer();
+    updateSelectedInformation();
   }
 };
 
@@ -78,12 +87,13 @@ removeFriend = function(userId) {
   if ($('#' + userId).prop("checked")) {
     $('#' + userId).prop("checked", false).checkboxradio("refresh");
   }
-  updateSelectedButtonContainer();
+  updateSelectedInformation();
 };
 
 initialize = function() {
   this.selected = [];
   this.selectedContainer = $('#selectedContainer');
+  this.clearSelectedButton = $('#clearSelectedButton');
   this.submitButton = $('#submitButton');
   var listContainer = $('#friendList');
   var loadingContainer = $('#friendsLoading');
@@ -121,6 +131,11 @@ initialize = function() {
     this.submitButton.bind("click", _.bind(function(event) {
       submitFriendCheckinForm();
       return false; // we dont' want to process the default post behavior
+    }, this));
+
+    this.clearSelectedButton.bind("click", _.bind(function(event) {
+      clearAllSelected();
+      return false; // stop work after clearing all selected
     }, this));
 
     loadingContainer.hide();

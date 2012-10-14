@@ -58,14 +58,14 @@
         <input type="hidden" id="inputCallback" name="fsqCallback" value="" />
         <input type="hidden" id="inputSelected" name="selected" value="" />
         <input id="submitButton" type="submit" value="Check them in! (0 selected)" disabled="true" />
-        <div id="selectedContainer">
+        <div>
           <div style="display: inline;" class="bold">
             Selected:
           </div>
-          <div class="deleteButton">
+          <div id="clearSelectedButton" class="deleteButton" style="display: none;">
             <a href="index.html" data-role="button" data-icon="delete" data-iconpos="notext">Delete</a>
           </div>
-          <div style="display: inline;">
+          <div id="selectedContainer" style="display: inline;">
             (none)
           </div>
         </div>
