@@ -2,6 +2,8 @@ import logging
 import os
 import random
 
+from foursquare import InvalidAuth
+
 from google.appengine.api import taskqueue
 from google.appengine.ext.webapp import template
 
@@ -83,6 +85,10 @@ class NotAlone(AbstractApp):
                                 content = json.dumps({'checkinFrom': sourceName}),
                                 text = successComment,
                                 post = True)
+        except InvalidAuth:
+          # If a user disconnects the app, we can then have an invalid token
+          logging.info('invalid oauth - deleting token')
+          tokenObj.delete()
         except Exception as inst:
           logging.error('Failed to check in user %s-%s' % (friendObj['firstName'], friendObj['id']))
 
