@@ -20,16 +20,16 @@ submitFriendCheckinForm = function() {
   $.mobile.loading( 'show', {});
   var ids = _(this.selected).map(function(x){return x.id;}, this).join("-");
   var fsqCallback = decodeURIComponent(getUrlParam('fsqCallback'));
-  var contentId = decodeURIComponent(getUrlParam('content_id'));
-  //$('#inputSelected').prop("value", ids);
-  //$('#inputCallback').prop("value", fsqCallback);
-  //$('#inputContentId').prop("value", contentId);
+  var userId = decodeURIComponent(getUrlParam('userId'));
+  var checkinId = decodeURIComponent(getUrlParam('checkinId'));
+  var accessToken = decodeURIComponent(getUrlParam('access_token'));
+
   $.ajax({
     url: 'friend-checkin',
     cache: false,
     type: 'POST',
     dataType: "json",
-    data: {source_content_id: contentId, selected: ids},
+    data: {userId: userId, checkinId: checkinId, access_token: accessToken, selected: ids}
   }).done(_.bind(function(result) {
     this.submitButton.button("enable");
     $.mobile.loading( 'hide', {});
@@ -99,11 +99,15 @@ initialize = function() {
   var loadingContainer = $('#friendsLoading');
   var loadedContainer = $('#friendsLoaded');
   var errorContainer = $('#friendsError');
+  var userId = decodeURIComponent(getUrlParam('userId'));
+  var checkinId = decodeURIComponent(getUrlParam('checkinId'));
+  var accessToken = decodeURIComponent(getUrlParam('access_token'));
 
   $.ajax({
-    url: 'contentjson?content_id=' + getUrlParam('content_id'),
+    url: 'friendjson',
     cache: false,
-    dataType: "json"
+    dataType: "json",
+    data: {userId: userId, checkinId: checkinId, access_token: accessToken}
   }).done(_.bind(function(result) {
     this.allFriends = result.friendInfo;
     _.each(this.allFriends, function(friend) {
