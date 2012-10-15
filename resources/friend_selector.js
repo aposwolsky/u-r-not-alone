@@ -139,6 +139,8 @@ initialize = function() {
 
     this.clearSelectedButton.bind("click", _.bind(function(event) {
       clearAllSelected();
+      // Clear the class that makes the button look blue
+      this.clearSelectedButton.find('a').removeClass("ui-btn-active")
       return false; // stop work after clearing all selected
     }, this));
 
