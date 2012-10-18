@@ -1,32 +1,56 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
   <title>{{ name|escape }}</title>
-  <meta content="width=320" name="viewport" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="resources/jquery.mobile-1.2.0/jquery.mobile-1.2.0.min.css" />
+  <script src="resources/jquery-1.8.2.min.js"></script>
+  <script src="resources/jquery.mobile-1.2.0/jquery.mobile-1.2.0.min.js"></script>
+  <script src="resources/underscore.js"></script>
+
+  <script type="text/javascript">
+    $(document).bind('pageinit', function() {
+      client_id = "{{ client_id }}";
+      $.getJSON('/isAuthd',
+                function(config) {
+                  if (config) {
+                    $('div.auth').hide();
+                    $('div.authed').show();
+                  }
+                });
+    });
+  </script>
+
+  <style type="text/css">
+    .footerText {
+      padding-bottom: 11px;
+      padding-top: 10px;
+    }
+  </style>
 </head>
 <body>
-<h1>{{ name|escape }}</h1>
-  <div class="description">
-    <p>{{ description|escape }}</p>
+<div id="indexPage" data-role="page">
+  <div data-role="header" data-position="fixed" data-id="hereWithFriendsHeader" class="ui-bar-a ui-header" role="banner">
+    <h1>{{ name|escape }}</h1>
   </div>
-  <div class="auth">
-    <a id="auth" href="{{ auth_url }}">
-      <img src="img/connect-white.png" />
-    </a>
+
+  <div data-role="content">
+    <div class="description">
+      <p>{{ description|escape }}</p>
+    </div>
+    <div class="auth">
+      <a id="auth" href="{{ auth_url }}">
+        <img src="img/connect-white.png" />
+      </a>
+    </div>
+    <div class="authed" style="display: none;">
+      All set
+    </div>
+  </div><!-- /content -->
+
+  <div data-role="footer" class="ui-bar" data-position="fixed" data-id="hereWithFriendsFooter">
+    <center><div class="footerText">Check in your friends!</div></center>
   </div>
-  <div class="authed" style="display: none;">
-    All set
-  </div>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
-  <script type="text/javascript">
-    client_id = "{{ client_id }}";
-    $.getJSON('/isAuthd',
-              function(config) {
-                if (config) {
-                  $('div.auth').hide();
-                  $('div.authed').show();
-                }
-              });
-  </script>
+</div><!-- /page -->
 </body>
 </html>
