@@ -24,6 +24,11 @@ handlers:
   upload: reply.html
   secure: always
 
+- url: /settings
+  static_files: settings.html
+  upload: settings.html
+  secure: always
+
 - url: /.*favicon.ico
   static_files: img/favicon.ico
   upload: img/favicon.ico

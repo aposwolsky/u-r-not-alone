@@ -4,32 +4,29 @@
 //         this.selectedContainer contains a container for a list of selected friends
 //         this.clearSelectedButton is the button to clear all selections
 //         this.submitButton is the submit button
+//         this.userId, this.checkinId, this.accessToken, this.fsqCallback : URL parameters
 
 //URL param extractor based on http://www.jquery4u.com/snippets/url-parameters-jquery/#.UHd9FmlVA_8 -- 10/11/2012
-getUrlParam = function(name){
+function getUrlParam(name){
   var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
   return results[1] || 0;
 };
 
-submitFriendCheckinForm = function() {
+function submitFriendCheckinForm() {
   this.submitButton.button("disable");
   $.mobile.loading( 'show', {});
   var ids = _(this.selected).map(function(x){return x.id;}, this).join("-");
-  var fsqCallback = decodeURIComponent(getUrlParam('fsqCallback'));
-  var userId = decodeURIComponent(getUrlParam('userId'));
-  var checkinId = decodeURIComponent(getUrlParam('checkinId'));
-  var accessToken = decodeURIComponent(getUrlParam('access_token'));
 
   $.ajax({
     url: 'friend-checkin',
     cache: false,
     type: 'POST',
     dataType: "json",
-    data: {userId: userId, checkinId: checkinId, access_token: accessToken, selected: ids}
+    data: {userId: this.userId, checkinId: this.checkinId, access_token: this.accessToken, selected: ids}
   }).done(_.bind(function(result) {
     this.submitButton.button("enable");
     $.mobile.loading( 'hide', {});
-    window.location.href = fsqCallback;
+    window.location.href = this.fsqCallback;
   }, this)).error(_.bind(function() {
     this.submitButton.button("enable");
     $.mobile.loading( 'hide', {});
@@ -39,9 +36,9 @@ submitFriendCheckinForm = function() {
   }, this));
 };
 
-updateSelectedInformation = function() {
+function updateSelectedInformation() {
   var numSelected = this.selected.length;
-  this.submitButton.prop("value", "Check them in! (" + numSelected + " selected)").button("refresh");
+  this.submitButton.text("Check them in! (" + numSelected + " selected)").button("refresh");
   this.selectedContainer.empty();
   if (numSelected > 0) {
     var names = _(this.selected).map(function(x){return x.name;}, this).join(", ");
@@ -55,14 +52,14 @@ updateSelectedInformation = function() {
   }
 };
 
-clearAllSelected = function() {
+function clearAllSelected() {
   _.each(this.selected, function(selectedObj) {
     removeFriend(selectedObj.id);
   }, this);
 };
 
 // precondition: this.selected contains a list of friend objects selected and this.allFriends contains all possible
-addFriend = function(userId) {
+function addFriend(userId) {
   var friendSelected = _(this.allFriends).find(function(x) {return x.id == userId;}, this);
   if (friendSelected) {
     this.selected.push(friendSelected);
@@ -77,7 +74,7 @@ addFriend = function(userId) {
 };
 
 // precondition: this.selected contains a list of friend objects selected
-removeFriend = function(userId) {
+function removeFriend(userId) {
   this.selected = _(this.selected).filter(function(x) {return x.id != userId;}, this);
   // Update checkbox if necessary
   if ($('#' + userId).prop("checked")) {
@@ -86,7 +83,7 @@ removeFriend = function(userId) {
   updateSelectedInformation();
 };
 
-initialize = function() {
+function initialize() {
   this.selected = [];
   this.selectedContainer = $('#selectedContainer');
   this.clearSelectedButton = $('#clearSelectedButton');
@@ -95,15 +92,31 @@ initialize = function() {
   var loadingContainer = $('#friendsLoading');
   var loadedContainer = $('#friendsLoaded');
   var errorContainer = $('#friendsError');
-  var userId = decodeURIComponent(getUrlParam('userId'));
-  var checkinId = decodeURIComponent(getUrlParam('checkinId'));
-  var accessToken = decodeURIComponent(getUrlParam('access_token'));
+  var settingsLink = $('#settingsLink');
+
+  var userIdEncoded = getUrlParam('userId');
+  var checkinIdEncoded = getUrlParam('checkinId');
+  var accessTokenEncoded = getUrlParam('access_token');
+  var fsqCallbackEncoded = getUrlParam('fsqCallback');
+  this.userId = decodeURIComponent(userIdEncoded);
+  this.checkinId = decodeURIComponent(checkinIdEncoded);
+  this.accessToken = decodeURIComponent(accessTokenEncoded);
+  this.fsqCallback = decodeURIComponent(fsqCallbackEncoded);
+
+  updateSelectedInformation();
+  listContainer.empty();
+  loadingContainer.show();
+  loadedContainer.hide();
+  errorContainer.hide();
+  settingsLink.prop('href', 'settings.html?userId=' + userIdEncoded + '&access_token=' + accessTokenEncoded );
+  settingsLink.removeClass('ui-disabled');
+
 
   $.ajax({
     url: 'friendjson',
     cache: false,
     dataType: "json",
-    data: {userId: userId, checkinId: checkinId, access_token: accessToken}
+    data: {userId: this.userId, checkinId: this.checkinId, access_token: this.accessToken}
   }).done(_.bind(function(result) {
     this.allFriends = result.friendInfo;
     _.each(this.allFriends, function(friend) {
@@ -112,8 +125,8 @@ initialize = function() {
         '<label class="checkboxInList" for="' + friend.id + '">' +
         friend.name + '</label></li>';
       listContainer.append(newElement);
-      $(".ui-page").trigger("create"); // formats the checkboxes
     }, this);
+    $(".ui-page").trigger("create"); // formats the checkboxes
 
     _.each(result.mentions, function(mentionedId) {
       addFriend(mentionedId);

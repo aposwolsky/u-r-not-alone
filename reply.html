@@ -1,5 +1,5 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
   <title>Here with Friends: Check in your friends!</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -30,6 +30,9 @@
     .bold {
       font-weight: bold;
     }
+    .inline {
+      display: inline;
+    }
     .deleteButton {
       display: inline-block;
       vertical-align:middle;
@@ -37,47 +40,66 @@
     .deleteButton .ui-btn {
       margin: 0px;
     }
+    .settingsButton {
+      display: inline-block;
+    }
+    .footerText {
+      display: inline-block;
+      font-size: 12px;
+      padding-left: 5px;
+    }
+    .loadingText {
+      margin-bottom: 8px;
+    }
+    .error {
+      color: red;
+    }
   </style>
 </head>
 <body>
 <div id="friendCheckinPage" data-role="page">
-  <div data-role="header">
+  <div data-role="header" data-position="fixed" data-id="hereWithFriendsHeader">
     <h1>Here with Friends</h1>
   </div><!-- /header -->
-  <div data-role="content">	
-    <p>Check them in!</p>
-    <div class="form">
-      <form action="/friend-checkin-static" method="post" data-ajax="false">
-        <input id="submitButton" type="submit" value="Check them in! (0 selected)" disabled="true" />
-        <div>
-          <div style="display: inline;" class="bold">
-            Selected:
-          </div>
-          <div id="clearSelectedButton" class="deleteButton" style="display: none;">
-            <a href="index.html" data-role="button" data-icon="delete" data-iconpos="notext">Delete</a>
-          </div>
-          <div id="selectedContainer" style="display: inline;">
-            (none)
-          </div>
+  <div data-role="content">
+    <div id="friendForm">
+      <button id="submitButton" data-role="button" data-theme="b" disabled="true">Check them in! (0 selected)</button>
+      <div>
+        <div class="inline bold">
+          Selected:
         </div>
-        <br />
-      </form>
+        <div id="clearSelectedButton" class="deleteButton" style="display: none;">
+          <a href="index.html" data-role="button" data-icon="delete" data-iconpos="notext">Delete</a>
+        </div>
+        <div id="selectedContainer" class="inline">
+          (none)
+        </div>
+      </div>
+      <br />
     </div>
     <div id="friendsLoaded" style="display: none;">
       <ul id="friendList" data-role="listview" data-inset="true" data-filter="true"></ul>
     </div>
     <div id="friendsLoading">
       <center>
-        <div style="margin-bottom:8px">loading friends...</div>
+        <div class="loadingText">loading friends...</div>
         <div><img src="../resources/jquery.mobile-1.2.0/images/ajax-loader.gif" alt="Loading..." align="middle"></div>
       </center>
     </div>
     <div id="friendsError" style="display: none;">
       <center>
-        <div style="margin-bottom:8px; color:red;">error... please refresh</div>
+        <div class="error">error... please refresh</div>
       </center>
     </div>
   </div><!-- /content -->
+  <div data-role="footer" class="ui-bar" data-position="fixed" data-id="hereWithFriendsFooter">
+    <div class="settingsButton">
+      <a id="settingsLink" href="settings" data-role="button" class="ui-disabled" data-icon="gear">Settings</a>
+    </div>
+    <div class="footerText">
+      Choose who can check you in.
+    </div>
+  </div>
 </div><!-- /page -->
 <!-- http://jquerymobile.com/test/docs/about/getting-started.html -->
 </body>
