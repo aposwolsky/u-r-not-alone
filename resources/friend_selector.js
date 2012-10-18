@@ -103,12 +103,12 @@ function initialize() {
   this.accessToken = decodeURIComponent(accessTokenEncoded);
   this.fsqCallback = decodeURIComponent(fsqCallbackEncoded);
 
-  updateSelectedInformation();
-  listContainer.empty();
-  loadingContainer.show();
   loadedContainer.hide();
   errorContainer.hide();
-  settingsLink.prop('href', 'settings.html?userId=' + userIdEncoded + '&access_token=' + accessTokenEncoded );
+  loadingContainer.show();
+  updateSelectedInformation();
+  listContainer.empty();
+  settingsLink.prop('href', 'settings?userId=' + userIdEncoded + '&access_token=' + accessTokenEncoded );
   settingsLink.removeClass('ui-disabled');
 
 
