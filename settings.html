@@ -7,22 +7,64 @@
   <script src="resources/jquery-1.8.2.min.js"></script>
   <script src="resources/jquery.mobile-1.2.0/jquery.mobile-1.2.0.min.js"></script>
   <script src="resources/underscore.js"></script>
-  <!-- <script src="resources/friend_selector.js"></script> -->
+  <script src="resources/friend_selector.js"></script>
 
   <script type="text/javascript">
     $(document).bind('pageinit', function() {
       // code to execute when the DOM is ready
-      //initialize();
+      initialize();
       $('#saveLink').bind("click", _.bind(function(event) {
         $.mobile.showPageLoadingMsg( $.mobile.pageLoadErrorMessageTheme, 'Changes Saved...', true );
         setTimeout( $.mobile.hidePageLoadingMsg, 1500 );
         history.back();
         return false; // we dont' want to process the default post behavior
       }, this));
+
+      $('input[type="radio"]').bind( "change", _.bind(function(event) {
+        if (event.target.value == 'some') {
+          $('#settingsFriendSelector').show();
+        } else {
+          $('#settingsFriendSelector').hide();
+        }
+      }, this));
+
+    // VALUE selected var myRadio = $('input[name=friends-choice]:checked').val();  "some", "none", or "all
     });
   </script>
 
   <style type="text/css">
+    .checkboxInList.ui-li {
+      padding: 0;
+      border: none;
+      margin: 0px;
+    }
+    .checkboxInList.ui-btn {
+      border: none;
+      margin-bottom: 0px;
+      margin-top: 0px;
+    }
+    .bold {
+      font-weight: bold;
+    }
+    .inline {
+      display: inline;
+    }
+    .deleteButton {
+      display: inline-block;
+      vertical-align:middle;
+    }
+    .deleteButton .ui-btn {
+      margin: 0px;
+    }
+    .settingsButton {
+      display: inline-block;
+    }
+    .loadingText {
+      margin-bottom: 8px;
+    }
+    .error {
+      color: red;
+    }
     .footerText {
       padding-bottom: 11px;
       padding-top: 10px;
@@ -38,17 +80,47 @@
   </div>
 
   <div data-role="content">
-    <fieldset data-role="controlgroup">
+    <fieldset id="foo" data-role="controlgroup">
       <legend>Choose who can check you in:</legend>
       <input type="radio" name="friends-choice" id="all-friends-choice" value="all" checked="checked" />
       <label for="all-friends-choice">All friends</label>
 
-      <input type="radio" name="friends-choice" id="no-friends-choice" value="all"/>
+      <input type="radio" name="friends-choice" id="no-friends-choice" value="none"/>
       <label for="no-friends-choice">No one</label>
 
-      <input type="radio" name="friends-choice" id="some-friends-choice" value="all"/>
-      <label for="some-friends-choice">Selected list</label>
+      <input type="radio" name="friends-choice" id="some-friends-choice" value="some"/>
+      <label id="settingsSelectedOption" for="some-friends-choice">Selected list</label>
     </fieldset>
+    <div id="settingsFriendSelector" style="display: none;">
+      <div id="friendForm">
+        <!-- <button id="submitButton" data-role="button" data-theme="b" disabled="true">Check them in! (0 selected)</button> -->
+        <div>
+          <div class="inline bold">
+            Selected:
+          </div>
+          <div id="clearSelectedButton" class="deleteButton" style="display: none;">
+            <a href="index.html" data-role="button" data-icon="delete" data-iconpos="notext">Delete</a>
+          </div>
+          <div id="selectedContainer" class="inline"></div>
+        </div>
+        <br />
+      </div>
+      <div id="friendsLoaded" style="display: none;">
+        <ul id="friendList" data-role="listview" data-inset="true" data-filter="true"></ul>
+      </div>
+      <div id="friendsLoading">
+        <center>
+          <div class="loadingText">loading friends...</div>
+          <div><img src="resources/jquery.mobile-1.2.0/images/ajax-loader.gif" alt="Loading..." align="middle"></div>
+        </center>
+      </div>
+      <div id="friendsError" style="display: none;">
+        <center>
+          <div class="error">error... please refresh</div>
+        </center>
+      </div>
+    </div>
+
   </div><!-- /content -->
 
   <div data-role="footer" class="ui-bar" data-position="fixed" data-id="hereWithFriendsFooter">

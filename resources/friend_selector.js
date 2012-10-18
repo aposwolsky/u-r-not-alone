@@ -9,7 +9,11 @@
 //URL param extractor based on http://www.jquery4u.com/snippets/url-parameters-jquery/#.UHd9FmlVA_8 -- 10/11/2012
 function getUrlParam(name){
   var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
-  return results[1] || 0;
+  if (results) {
+    return results[1] || '';
+  } else {
+    return '';
+  }
 };
 
 function submitFriendCheckinForm() {
@@ -40,6 +44,8 @@ function updateSelectedInformation() {
   var numSelected = this.selected.length;
   this.submitButton.text("Check them in! (" + numSelected + " selected)").button("refresh");
   this.selectedContainer.empty();
+  // possibly also update the label if this is the settings page
+  $('#settingsSelectedOption .ui-btn-text').text("Selected list (" + numSelected + ")");
   if (numSelected > 0) {
     var names = _(this.selected).map(function(x){return x.name;}, this).join(", ");
     this.selectedContainer.append(names);
