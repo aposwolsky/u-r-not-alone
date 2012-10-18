@@ -5,10 +5,6 @@
 //         this.clearSelectedButton is the button to clear all selections
 //         this.submitButton is the submit button
 
-getJson = function(input) {
-  return JSON.parse(input);
-};
-
 //URL param extractor based on http://www.jquery4u.com/snippets/url-parameters-jquery/#.UHd9FmlVA_8 -- 10/11/2012
 getUrlParam = function(name){
   var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
