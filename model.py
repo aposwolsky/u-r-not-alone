@@ -48,3 +48,19 @@ class ContentInfo(db.Model):
   content = db.TextProperty()
   reply_id = db.TextProperty()
   post_id = db.TextProperty()
+
+class UserSettings(db.Model):
+  """Settings for each user"""
+  fs_id = db.StringProperty()
+  permissions = db.TextProperty()
+
+  @staticmethod
+  def get_by_fs_id(fs_id):
+    return UserSettings().all().filter('fs_id =', fs_id).get()
+
+class CheckinHistory(db.Model):
+  """History information of checkins generated."""
+  source_fs_id = db.StringProperty()
+  target_fs_id = db.StringProperty()
+  target_fs_name = db.TextProperty()
+  time = db.DateTimeProperty(auto_now_add=True)

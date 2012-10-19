@@ -11,7 +11,7 @@ try: import simplejson as json
 except ImportError: import json
 
 from config import CONFIG
-from model import UserToken, ContentInfo
+from model import UserToken, ContentInfo, UserSettings, CheckinHistory
 import utils
 
 from foursquare import InvalidAuth
@@ -59,6 +59,8 @@ class NotAlone(webapp.RequestHandler):
   def get(self):
     if self.request.path.startswith('/friendjson'):
       return self.getAllowedFriendsJson()
+    elif self.request.path.startswith('/settingsjson'):
+      return self.getUserSettingsJson()
 
     self.error(404)
 
@@ -76,7 +78,8 @@ class NotAlone(webapp.RequestHandler):
       friendInfo = [
         {'name': (friend.get('firstName', '') + ' ' + friend.get('lastName', '')).strip(),
          'id': friend['id']}
-         for friend in friends if (friend.get('relationship', 'friend') == 'friend') and (UserToken.get_by_fs_id(friend['id']) is not None)]
+         for friend in friends if (friend.get('relationship', 'friend') == 'friend')
+                               and (self.getUserToken(userId, friend['id']) is not None)]
       friendInfoSorted = sorted(friendInfo, key=lambda x: x['name'].upper())
 
       if 'entities' in checkin_json:
@@ -84,11 +87,88 @@ class NotAlone(webapp.RequestHandler):
       else:
         mentionedIds = []
 
-      self.response.out.write(json.dumps({'friendInfo': friendInfoSorted, 'mentions': mentionedIds}))
+      settingsSummary = self.getPermissionsSummary(userId)
+      self.response.out.write(json.dumps({'friendInfo': friendInfoSorted,
+                                          'mentions': mentionedIds,
+                                          'settingsSummary': settingsSummary}))
 
     else:
       self.error(404)
 
+  #
+  # Gets the security settings for userId
+  #
+  def getPermissions(self, userId):
+    settingsObj = UserSettings.get_by_fs_id(userId)
+    if settingsObj:
+      return json.loads(settingsObj.permissions)
+    else:
+      return {'allowAll': True, 'authorizedFriends': []}
+
+  #
+  # Permissions Summary
+  #
+  def getPermissionsSummary(self, userId):
+    try:
+      permissions = self.getPermissions(userId)
+      if (permissions.get('allowAll')):
+        return 'All friends can check you in.'
+      else:
+        numAuthorized = len(permissions.get('authorizedFriends'))
+        if (numAuthorized == 0):
+          return 'No one can check you in.'
+        else:
+          return '%s of your friends can check you in.' % numAuthorized
+    except Exception:
+      return '(error receiving settings)'
+
+
+  #
+  # Precondition: given two friends checkinSource and checkinTarget
+  # returns whether checkinSource is allowed to check in checkinTarget
+  #
+  def isAllowed(self, checkinSource, checkinTarget):
+    try:
+      targetPermissions = self.getPermissions(checkinTarget)
+      if (targetPermissions.get('allowAll') or checkinSource in targetPermissions.get('authorizedFriends')):
+        return True
+      else:
+        return False
+    except Exception:
+      logging.error('Failed to check whether %s can check in %s' % (checkinSource, checkinTarget))
+      return False
+
+  #
+  # Precondition: given two friends checkinSource and checkinTarget
+  # returns a token for checkinTarget if checkinSource is allowed
+  #
+  def getUserToken(self, checkinSource, checkinTarget):
+    token = UserToken.get_by_fs_id(checkinTarget)
+    if (token is not None and self.isAllowed(checkinSource, checkinTarget)):
+      return token
+    else:
+      return None
+
+
+  def getUserSettingsJson(self):
+    userId = self.request.get('userId')
+    token = self.request.get('access_token')
+
+    access_token = self.verifiedAccessToken(userId, token)
+    if (access_token):
+      client = utils.makeFoursquareClient(access_token)
+      friends = [friend for friend in client.users.friends()['friends']['items']]
+      friendInfo = [
+        {'name': (friend.get('firstName', '') + ' ' + friend.get('lastName', '')).strip(),
+         'id': friend['id']}
+         for friend in friends if (friend.get('relationship', 'friend') == 'friend')]
+      friendInfoSorted = sorted(friendInfo, key=lambda x: x['name'].upper())
+
+      permissions = self.getPermissions(userId)
+      self.response.out.write(json.dumps({'friendInfo': friendInfoSorted, 'permissions': permissions}))
+
+    else:
+      self.error(404)
 
   def friendCheckin(self):
     taskqueue.add(url='/_friend-checkin',
@@ -97,6 +177,43 @@ class NotAlone(webapp.RequestHandler):
                           'access_token': self.request.get('access_token'),
                           'selected': self.request.get('selected')})
     self.response.out.write(json.dumps({'status': 'ok'}))
+
+  def changeUserSettings(self):
+    userId = self.request.get('userId')
+    token = self.request.get('access_token')
+
+    access_token = self.verifiedAccessToken(userId, token)
+    if (access_token):
+      allowAllParam = self.request.get('allowAll')
+      selectedParam = self.request.get('authorizedFriends')
+      logging.debug('changeUserSettings for user %s. allowAll=%s authorizedFriends=%s' %
+                     (userId, allowAllParam, selectedParam))
+
+      allowAll = allowAllParam in ['True', 'true', '1']
+      if (selectedParam is None or selectedParam.strip() == ""):
+        selectedIds = []
+      else:
+        selectedIds = selectedParam.split('-')
+
+      existingSettingsObj = UserSettings.get_by_fs_id(userId)
+      if existingSettingsObj:
+        settingsObj = existingSettingsObj
+      else:
+        settingsObj = UserSettings()
+
+      if (allowAll):
+        permissions = {'allowAll': True, 'authorizedFriends': []}
+      else:
+        permissions = {'allowAll': False, 'authorizedFriends': selectedIds}
+
+      settingsObj.fs_id = userId
+      settingsObj.permissions = json.dumps(permissions)
+      settingsObj.put()
+
+      logging.info('%s changed settings to: %s' % (settingsObj.fs_id, settingsObj.permissions))
+      self.response.out.write(json.dumps({'status': 'ok'}))
+    else:
+      self.error(404)
 
   #
   # Post
@@ -117,6 +234,8 @@ class NotAlone(webapp.RequestHandler):
       return self.friendCheckin()
     elif self.request.path.startswith('/_friend-checkin'):
       return self.friendCheckinTaskQueue()
+    elif self.request.path.startswith('/change-settings'):
+      return self.changeUserSettings()
 
     self.error(404)
   #
@@ -153,15 +272,23 @@ class NotAlone(webapp.RequestHandler):
 
       for selectedUserId in selectedUserIds:
         matching = [friend for friend in allowedFriends if friend['id'] == selectedUserId]
-        tokenObj = UserToken.get_by_fs_id(selectedUserId)
+        tokenObj = self.getUserToken(sourceId, selectedUserId)
         if (len(matching) > 0 and tokenObj is not None):
-          friendObj = matching[0];
+          friendObj = matching[0]
           client.set_access_token(tokenObj.token)
           try:
             friendCheckin = client.checkins.add(newCheckin)['checkin']
             if 'user' not in friendCheckin:
               friendCheckin['user'] = {'id': friendObj['id'], 'firstName': friendObj['firstName']}
             successNames.append(friendObj['firstName'])
+
+            # Update history
+            history = CheckinHistory()
+            history.source_fs_id = sourceId
+            history.target_fs_id = friendObj['id']
+            history.target_fs_name = (friendObj.get('firstName', '') + ' ' + friendObj.get('lastName', '')).strip()
+            history.put()
+
             self.makeContentInfo( checkin_json = friendCheckin,
                                   content = json.dumps({'checkinFrom': sourceName}),
                                   text = successComment,
@@ -238,14 +365,16 @@ class NotAlone(webapp.RequestHandler):
     content_info.checkin_id = checkin_id
     content_info.venue_id = checkin_json['venue']['id']
     content_info.content = content
-    if not url:
-      url = utils.generateContentUrl(content_id)
 
     access_token = self.fetchAccessToken(content_info.fs_id)
     client = utils.makeFoursquareClient(access_token)
 
-    params = {'contentId' : content_id,
-              'url' : url}
+    if not url:
+      params = {}
+    else:
+      params = {'contentId' : content_id,
+                'url' : url}
+
     if text:
       params['text'] = text
     if photoId:

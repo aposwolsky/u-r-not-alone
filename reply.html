@@ -11,8 +11,7 @@
 
   <script type="text/javascript">
     $(document).bind('pageinit', function() {
-      // code to execute when the DOM is ready
-      initialize();
+      initializeFriendCheckinPage();
     });
   </script>
 
@@ -94,10 +93,7 @@
     <div class="settingsButton">
       <a id="settingsLink" rel="external" href="settings" data-role="button" data-mini="true" class="ui-disabled" data-icon="gear">Settings</a>
     </div>
-    <div class="footerText">
-      <!-- Choose who can check you in. -->
-      ADD DESCRIPTIVE TEXT
-    </div>
+    <div id="footerSummaryText" class="footerText"></div>
   </div>
 </div><!-- /page -->
 </body>

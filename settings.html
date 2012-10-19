@@ -11,24 +11,7 @@
 
   <script type="text/javascript">
     $(document).bind('pageinit', function() {
-      // code to execute when the DOM is ready
-      initialize();
-      $('#saveLink').bind("click", _.bind(function(event) {
-        $.mobile.showPageLoadingMsg( $.mobile.pageLoadErrorMessageTheme, 'Changes Saved...', true );
-        setTimeout( $.mobile.hidePageLoadingMsg, 1500 );
-        history.back();
-        return false; // we dont' want to process the default post behavior
-      }, this));
-
-      $('input[type="radio"]').bind( "change", _.bind(function(event) {
-        if (event.target.value == 'some') {
-          $('#settingsFriendSelector').show();
-        } else {
-          $('#settingsFriendSelector').hide();
-        }
-      }, this));
-
-    // VALUE selected var myRadio = $('input[name=friends-choice]:checked').val();  "some", "none", or "all
+      initializeSettingsPage();
     });
   </script>
 
@@ -76,49 +59,50 @@
   <div data-role="header" data-position="fixed" data-id="hereWithFriendsHeader" class="ui-bar-a ui-header" role="banner">
     <a href="index.html" data-icon="delete" data-rel="back">Cancel</a>
     <h1>Change Settings</h1>
-    <a id="saveLink" href="index.html" data-icon="check" data-theme="b">Save</a>
+    <a id="saveSettingsButton" href="index.html" data-icon="check" data-theme="b">Save</a>
   </div>
 
   <div data-role="content">
-    <fieldset id="foo" data-role="controlgroup">
-      <legend>Choose who can check you in:</legend>
-      <input type="radio" name="friends-choice" id="all-friends-choice" value="all" checked="checked" />
-      <label for="all-friends-choice">All friends</label>
+    <div id="settingsLoaded">
+      <fieldset id="foo" data-role="controlgroup">
+        <legend>Choose who can check you in:</legend>
+        <input type="radio" name="friends-choice" id="all-friends-choice" value="all" />
+        <label for="all-friends-choice">All friends</label>
 
-      <input type="radio" name="friends-choice" id="no-friends-choice" value="none"/>
-      <label for="no-friends-choice">No one</label>
+        <input type="radio" name="friends-choice" id="no-friends-choice" value="none"/>
+        <label for="no-friends-choice">No one</label>
 
-      <input type="radio" name="friends-choice" id="some-friends-choice" value="some"/>
-      <label id="settingsSelectedOption" for="some-friends-choice">Selected list</label>
-    </fieldset>
-    <div id="settingsFriendSelector" style="display: none;">
-      <div id="friendForm">
-        <!-- <button id="submitButton" data-role="button" data-theme="b" disabled="true">Check them in! (0 selected)</button> -->
-        <div>
-          <div class="inline bold">
-            Selected:
+        <input type="radio" name="friends-choice" id="some-friends-choice" value="some"/>
+        <label id="settingsSelectedOption" for="some-friends-choice">Selected list</label>
+      </fieldset>
+      <div id="settingsFriendSelector" style="display: none;">
+        <div id="friendForm">
+          <div>
+            <div class="inline bold">
+              Selected:
+            </div>
+            <div id="clearSelectedButton" class="deleteButton" style="display: none;">
+              <a href="index.html" data-role="button" data-icon="delete" data-iconpos="notext">Delete</a>
+            </div>
+            <div id="selectedContainer" class="inline"></div>
           </div>
-          <div id="clearSelectedButton" class="deleteButton" style="display: none;">
-            <a href="index.html" data-role="button" data-icon="delete" data-iconpos="notext">Delete</a>
-          </div>
-          <div id="selectedContainer" class="inline"></div>
+          <br />
         </div>
-        <br />
+        <div>
+          <ul id="friendList" data-role="listview" data-inset="true" data-filter="true"></ul>
+        </div>
       </div>
-      <div id="friendsLoaded" style="display: none;">
-        <ul id="friendList" data-role="listview" data-inset="true" data-filter="true"></ul>
-      </div>
-      <div id="friendsLoading">
-        <center>
-          <div class="loadingText">loading friends...</div>
-          <div><img src="resources/jquery.mobile-1.2.0/images/ajax-loader.gif" alt="Loading..." align="middle"></div>
-        </center>
-      </div>
-      <div id="friendsError" style="display: none;">
-        <center>
-          <div class="error">error... please refresh</div>
-        </center>
-      </div>
+    </div>
+    <div id="settingsLoading">
+      <center>
+        <div class="loadingText">loading settings...</div>
+        <div><img src="resources/jquery.mobile-1.2.0/images/ajax-loader.gif" alt="Loading..." align="middle"></div>
+      </center>
+    </div>
+    <div id="settingsError" style="display: none;">
+      <center>
+        <div class="error">error... please refresh</div>
+      </center>
     </div>
 
   </div><!-- /content -->

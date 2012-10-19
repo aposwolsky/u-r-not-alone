@@ -124,7 +124,6 @@ class HomePage(webapp.RequestHandler):
     params = {'client_id': client_id}
     params['auth_url'] = utils.generateFoursquareAuthUri(client_id)
     params['name'] = CONFIG['site_name']
-    params['description'] = CONFIG['site_description']
     path = os.path.join(os.path.dirname(__file__),
                         'templates/index.html')
     self.response.out.write(template.render(path, params))

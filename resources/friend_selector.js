@@ -1,10 +1,7 @@
 // Context precondition:
 // expects this.selected to contain a list of friend objects selected
-//         this.alLFriends contains all possible friends
-//         this.selectedContainer contains a container for a list of selected friends
-//         this.clearSelectedButton is the button to clear all selections
-//         this.submitButton is the submit button
-//         this.userId, this.checkinId, this.accessToken, this.fsqCallback : URL parameters
+//         this.allFriends contains all possible friends
+//         this.friendChoiceSelection will contain the option selected when on the settings screen
 
 //URL param extractor based on http://www.jquery4u.com/snippets/url-parameters-jquery/#.UHd9FmlVA_8 -- 10/11/2012
 function getUrlParam(name){
@@ -16,8 +13,41 @@ function getUrlParam(name){
   }
 };
 
-function submitFriendCheckinForm() {
-  this.submitButton.button("disable");
+function saveSettings(userId, accessToken) {
+  var allowAll = false;
+  var ids = "";
+  if (this.friendChoiceSelection == "all") {
+    allowAll = true;
+    ids = "";
+  } else if (this.friendChoiceSelection == "none") {
+    allowAll = false;
+    ids = "";
+  } else if (this.friendChoiceSelection == "some") {
+    allowAll = false;
+    ids = _(this.selected).map(function(x){return x.id;}, this).join("-");
+  }
+
+  $.mobile.loading( 'show', {});
+
+  $.ajax({
+    url: 'change-settings',
+    cache: false,
+    type: 'POST',
+    dataType: "json",
+    data: {userId: userId, access_token: accessToken, allowAll: allowAll, authorizedFriends: ids}
+  }).done(_.bind(function(result) {
+    $.mobile.loading( 'hide', {});
+    history.back();
+  }, this)).error(_.bind(function() {
+    $.mobile.loading( 'hide', {});
+    // briefly show error message
+    $.mobile.showPageLoadingMsg( $.mobile.pageLoadErrorMessageTheme, 'Error, please try again...', true );
+    setTimeout( $.mobile.hidePageLoadingMsg, 1500 );
+  }, this));
+};
+
+function submitFriendCheckinForm(userId, checkinId, accessToken, fsqCallback) {
+  $('#submitButton').button("disable");
   $.mobile.loading( 'show', {});
   var ids = _(this.selected).map(function(x){return x.id;}, this).join("-");
 
@@ -26,13 +56,13 @@ function submitFriendCheckinForm() {
     cache: false,
     type: 'POST',
     dataType: "json",
-    data: {userId: this.userId, checkinId: this.checkinId, access_token: this.accessToken, selected: ids}
+    data: {userId: userId, checkinId: checkinId, access_token: accessToken, selected: ids}
   }).done(_.bind(function(result) {
-    this.submitButton.button("enable");
+    $('#submitButton').button("enable");
     $.mobile.loading( 'hide', {});
-    window.location.href = this.fsqCallback;
+    window.location.href = fsqCallback;
   }, this)).error(_.bind(function() {
-    this.submitButton.button("enable");
+    $('#submitButton').button("enable");
     $.mobile.loading( 'hide', {});
     // briefly show error message
     $.mobile.showPageLoadingMsg( $.mobile.pageLoadErrorMessageTheme, 'Error, please try again...', true );
@@ -40,21 +70,26 @@ function submitFriendCheckinForm() {
   }, this));
 };
 
+// This function will update the controls on both the checkin and the settings page
 function updateSelectedInformation() {
   var numSelected = this.selected.length;
-  this.submitButton.text("Check them in! (" + numSelected + " selected)").button("refresh");
-  this.selectedContainer.empty();
-  // possibly also update the label if this is the settings page
-  $('#settingsSelectedOption .ui-btn-text').text("Selected list (" + numSelected + ")");
+  var submitButton = $('#submitButton'); // only for the checkin page
+  $('#settingsSelectedOption .ui-btn-text').text("Selected list (" + numSelected + ")"); // only on the settings page
+
+  var clearSelectedButton = $('#clearSelectedButton');
+  submitButton.text("Check them in! (" + numSelected + " selected)").button("refresh");
+  var selectedContainer = $('#selectedContainer');
+  selectedContainer.empty();
+
   if (numSelected > 0) {
     var names = _(this.selected).map(function(x){return x.name;}, this).join(", ");
-    this.selectedContainer.append(names);
-    this.submitButton.button("enable");
-    this.clearSelectedButton.show();
+    selectedContainer.append(names);
+    submitButton.button("enable");
+    clearSelectedButton.show();
   } else {
-    this.selectedContainer.append('(none)');
-    this.submitButton.button("disable");
-    this.clearSelectedButton.hide();
+    selectedContainer.append('(none)');
+    submitButton.button("disable");
+    clearSelectedButton.hide();
   }
 };
 
@@ -89,11 +124,8 @@ function removeFriend(userId) {
   updateSelectedInformation();
 };
 
-function initialize() {
+function initializeFriendCheckinPage() {
   this.selected = [];
-  this.selectedContainer = $('#selectedContainer');
-  this.clearSelectedButton = $('#clearSelectedButton');
-  this.submitButton = $('#submitButton');
   var listContainer = $('#friendList');
   var loadingContainer = $('#friendsLoading');
   var loadedContainer = $('#friendsLoaded');
@@ -104,10 +136,10 @@ function initialize() {
   var checkinIdEncoded = getUrlParam('checkinId');
   var accessTokenEncoded = getUrlParam('access_token');
   var fsqCallbackEncoded = getUrlParam('fsqCallback');
-  this.userId = decodeURIComponent(userIdEncoded);
-  this.checkinId = decodeURIComponent(checkinIdEncoded);
-  this.accessToken = decodeURIComponent(accessTokenEncoded);
-  this.fsqCallback = decodeURIComponent(fsqCallbackEncoded);
+  var userId = decodeURIComponent(userIdEncoded);
+  var checkinId = decodeURIComponent(checkinIdEncoded);
+  var accessToken = decodeURIComponent(accessTokenEncoded);
+  var fsqCallback = decodeURIComponent(fsqCallbackEncoded);
 
   loadedContainer.hide();
   errorContainer.hide();
@@ -117,12 +149,11 @@ function initialize() {
   settingsLink.prop('href', 'settings?userId=' + userIdEncoded + '&access_token=' + accessTokenEncoded );
   settingsLink.removeClass('ui-disabled');
 
-
   $.ajax({
     url: 'friendjson',
     cache: false,
     dataType: "json",
-    data: {userId: this.userId, checkinId: this.checkinId, access_token: this.accessToken}
+    data: {userId: userId, checkinId: checkinId, access_token: accessToken}
   }).done(_.bind(function(result) {
     this.allFriends = result.friendInfo;
     _.each(this.allFriends, function(friend) {
@@ -138,6 +169,8 @@ function initialize() {
       addFriend(mentionedId);
     }, this);
 
+    $('#footerSummaryText').text(result.settingsSummary)
+
     $("input[type='checkbox']").bind("change", _.bind(function(event) {
       var userId = event.target.id;
       var isChecked = event.target.checked;
@@ -147,16 +180,110 @@ function initialize() {
         removeFriend(userId);
       }
     }, this));
-    this.submitButton.bind("click", _.bind(function(event) {
-      submitFriendCheckinForm();
-      return false; // we dont' want to process the default post behavior
+    $('#submitButton').bind("click", _.bind(function(event) {
+      submitFriendCheckinForm(userId, checkinId, accessToken, fsqCallback);
+      return false;
     }, this));
 
-    this.clearSelectedButton.bind("click", _.bind(function(event) {
+    $('#clearSelectedButton').bind("click", _.bind(function(event) {
       clearAllSelected();
       // Clear the class that makes the button look blue
-      this.clearSelectedButton.find('a').removeClass("ui-btn-active")
+      $('#clearSelectedButton').find('a').removeClass("ui-btn-active")
       return false; // stop work after clearing all selected
+    }, this));
+
+    loadingContainer.hide();
+    loadedContainer.show();
+
+  }, this)).error(_.bind(function() {
+    loadingContainer.hide();
+    errorContainer.show();
+  }, this));
+};
+
+function initializeSettingsPage() {
+  this.selected = [];
+  var listContainer = $('#friendList');
+  var loadingContainer = $('#settingsLoading');
+  var loadedContainer = $('#settingsLoaded');
+  var errorContainer = $('#settingsError');
+
+  var userIdEncoded = getUrlParam('userId');
+  var accessTokenEncoded = getUrlParam('access_token');
+  var userId = decodeURIComponent(userIdEncoded);
+  var accessToken = decodeURIComponent(accessTokenEncoded);
+
+  loadedContainer.hide();
+  errorContainer.hide();
+  loadingContainer.show();
+  updateSelectedInformation();
+  listContainer.empty();
+
+  $.ajax({
+    url: 'settingsjson',
+    cache: false,
+    dataType: "json",
+    data: {userId: userId, access_token: accessToken}
+  }).done(_.bind(function(result) {
+    // Make sure none are selected to start
+    $('input[name=friends-choice]').removeProp("checked", "false").checkboxradio("refresh");
+
+    if (result.permissions.allowAll) {
+      $('#settingsFriendSelector').hide();
+      $('#all-friends-choice').prop("checked", "checked").checkboxradio("refresh");
+      this.friendChoiceSelection = "all";
+    } else if (result.permissions.authorizedFriends.length == 0) {
+      $('#settingsFriendSelector').hide();
+      $('#no-friends-choice').prop("checked", "checked").checkboxradio("refresh");
+      this.friendChoiceSelection = "none";
+    } else {
+      $('#some-friends-choice').prop("checked", "checked").checkboxradio("refresh");
+      this.friendChoiceSelection = "some";
+      $('#settingsFriendSelector').show();
+    }
+    this.allFriends = result.friendInfo;
+    _.each(this.allFriends, function(friend) {
+      var newElement = '<li class="checkboxInList">' +
+        '<input type="checkbox" id=' + friend.id + ' name="' + friend.id + '" class="custom" />' +
+        '<label class="checkboxInList" for="' + friend.id + '">' +
+        friend.name + '</label></li>';
+      listContainer.append(newElement);
+    }, this);
+    $(".ui-page").trigger("create"); // formats the checkboxes
+
+    _.each(result.permissions.authorizedFriends, function(mentionedId) {
+      addFriend(mentionedId);
+    }, this);
+
+    $("input[type='checkbox']").bind("change", _.bind(function(event) {
+      var userId = event.target.id;
+      var isChecked = event.target.checked;
+      if (isChecked) {
+        addFriend(userId);
+      } else {
+        removeFriend(userId);
+      }
+    }, this));
+
+    $('#clearSelectedButton').bind("click", _.bind(function(event) {
+      clearAllSelected();
+      // Clear the class that makes the button look blue
+      $('#clearSelectedButton').find('a').removeClass("ui-btn-active")
+      return false;
+    }, this));
+
+    $('#saveSettingsButton').bind("click", _.bind(function(event) {
+      saveSettings(userId, accessToken);
+      return false;
+    }, this));
+
+    $('input[name=friends-choice]').bind( "change", _.bind(function(event) {
+      this.friendChoiceSelection = event.target.value;
+      if (event.target.value == 'some') {
+        $('#settingsFriendSelector').show();
+      } else {
+        $('#settingsFriendSelector').hide();
+      }
     }, this));
 
     loadingContainer.hide();
