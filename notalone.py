@@ -314,6 +314,7 @@ class NotAlone(webapp.RequestHandler):
 
       allowedFriends = client.users.friends()['friends']['items']
       successNames = []
+      disconnectedNames = []
 
       for selectedUserId in selectedUserIds:
         matching = [friend for friend in allowedFriends if friend['id'] == selectedUserId]
@@ -340,17 +341,27 @@ class NotAlone(webapp.RequestHandler):
                                   post = True)
           except InvalidAuth:
             # If a user disconnects the app, we can then have an invalid token
-            logging.info('invalid oauth - deleting token')
+            logging.info('invalid oauth - deleting token for %s' % friendObj['id'])
             tokenObj.delete()
+            disconnectedNames.append(friendObj['firstName'])
           except Exception as inst:
             logging.error('Failed to check in user %s-%s' % (friendObj['firstName'], friendObj['id']))
 
       client.set_access_token(access_token) # restore token to original user
       successNamesStr = ", ".join(successNames)
+      disconnectedNamesStr = ", ".join(disconnectedNames)
+
       if (len(successNames) > 0):
-        message = "You just checked-in: %s" % successNamesStr
+        message = "You just checked in: %s" % successNamesStr
         self.makeContentInfo( checkin_json = checkin_json,
                               content = json.dumps({'successNames': successNames, 'message': message}),
+                              text = message,
+                              post = True)
+
+      if (len(disconnectedNames) > 0):
+        message = "Failed to check in the following users as they have disconnected the app: %s" % disconnectedNamesStr
+        self.makeContentInfo( checkin_json = checkin_json,
+                              content = json.dumps({'disconnectedNames': disconnectedNames, 'message': message}),
                               text = message,
                               post = True)
 
@@ -421,7 +432,7 @@ class NotAlone(webapp.RequestHandler):
                 'url' : url}
 
     if text:
-      params['text'] = text
+      params['text'] = text.encode('utf-8')
     if photoId:
       params['photoId'] = photoId
 
