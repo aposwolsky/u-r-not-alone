@@ -160,8 +160,10 @@ class NotAlone(webapp.RequestHandler):
         numAuthorized = len(permissions.get('authorizedFriends'))
         if (numAuthorized == 0):
           return 'No one can check you in.'
+        elif (numAuthorized == 1):
+          return '1 friend can check you in.'
         else:
-          return '%s of your friends can check you in.' % numAuthorized
+          return '%s friends can check you in.' % numAuthorized
     except Exception:
       return '(error receiving settings)'
 
