@@ -11,13 +11,21 @@
   <script type="text/javascript">
     $(document).bind('pageinit', function() {
       client_id = "{{ client_id }}";
-      $.getJSON('/isAuthd',
-                function(config) {
-                  if (config) {
-                    $('div.auth').hide();
-                    $('div.authed').show();
-                  }
-                });
+
+      $.ajax({
+        url: 'isAuthd',
+        cache: false,
+        dataType: "json",
+      }).done(_.bind(function(result) {
+        if (result.connected) {
+          $('#connectedName').text(result.name);
+          $('#connectedSettingsText').text(result.settingsSummary);
+          $('#settingsLink').prop("href", result.settingsLink);
+
+          $('div.auth').hide();
+          $('div.authed').show();
+        }
+      }, this));
     });
   </script>
 
@@ -26,6 +34,22 @@
       padding-bottom: 11px;
       padding-top: 10px;
     }
+    .settingsButton {
+      display: inline-block;
+      padding-top: 10px;
+    }
+    .settingsText {
+      display: inline-block;
+      font-size: 12px;
+      padding-left: 5px;
+    }
+    #logoutLink,#privacyLink {
+      color: #999;
+      font-weight: normal;
+      font-size: 13px;
+      padding-left: 5px;
+    }
+
   </style>
 </head>
 <body>
@@ -36,7 +60,12 @@
 
   <div data-role="content">
     <div class="description">
-      <p>After you check in, use this app to check in friends who are with you.</p>
+      <p>After you check in, use this app to check in friends who are with you.
+        <a id="privacyLink" rel="external"
+           href="http://www.privacychoice.org/policy/mobile?policy=a786fd0cc0ceaabfd9fd7a42501ffbc4">
+          (privacy policy)
+        </a>
+      </p>
     </div>
     <div class="auth">
       <a id="auth" href="{{ auth_url }}">
@@ -44,7 +73,12 @@
       </a>
     </div>
     <div class="authed" style="display: none;">
-      All set
+      <h3>Connected</h3>
+      <div>Welcome <span id="connectedName"></span>! <a id="logoutLink" rel="external" href="logout">(Not You)</a></div>
+      <div class="settingsButton">
+        <a id="settingsLink" rel="external" href="settings" data-role="button" data-mini="true" data-icon="gear">Settings</a>
+      </div>
+      <div id="connectedSettingsText" class="settingsText"></div>
     </div>
   </div><!-- /content -->
 

@@ -84,22 +84,6 @@ class OAuth(webapp.RequestHandler):
     self.redirect(redirect_uri)
 
 
-class IsAuthd(webapp.RequestHandler):
-  """Returns whether or not a user has connected their foursquare account"""
-  def get(self):
-    user_token = UserToken.get_from_cookie(self.request.cookies.get('session', None))
-    is_authd = 'false'
-    if user_token and user_token.fs_id:
-      client = utils.makeFoursquareClient(user_token.token)
-      try:
-        client.users()
-        is_authd = 'true'
-      except InvalidAuth:
-        user_token.delete()
-
-    self.response.out.write(is_authd)
-
-
 class ProcessCheckin(webapp.RequestHandler):
   PREFIX = "/checkin"
 
@@ -131,7 +115,6 @@ class HomePage(webapp.RequestHandler):
 
 application = webapp.WSGIApplication([('/oauth.*', OAuth),
                                       ('/checkin', ProcessCheckin),
-                                      ('/isAuthd', IsAuthd),
                                       ('/', HomePage),
                                       ('/resources/', HomePage),
                                       ('/_checkin', NotAlone),

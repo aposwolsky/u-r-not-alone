@@ -11,7 +11,7 @@ try: import simplejson as json
 except ImportError: import json
 
 from config import CONFIG
-from model import UserToken, ContentInfo, UserSettings, CheckinHistory
+from model import UserToken, ContentInfo, UserSettings, CheckinHistory, UserSession
 import utils
 
 from foursquare import InvalidAuth
@@ -21,8 +21,8 @@ class NotAlone(webapp.RequestHandler):
   def getUserIdFromToken(self, token):
     try:
       client = utils.makeFoursquareClient(token)
-      user = client.users()
-      return user['user']['id']
+      user = client.users()['user']
+      return user['id']
     except InvalidAuth:
       return None
 
@@ -61,8 +61,51 @@ class NotAlone(webapp.RequestHandler):
       return self.getAllowedFriendsJson()
     elif self.request.path.startswith('/settingsjson'):
       return self.getUserSettingsJson()
+    elif self.request.path.startswith('/isAuthd'):
+      return self.getAuthdStatus()
+    elif self.request.path.startswith('/logout'):
+      return self.logout()
 
     self.error(404)
+
+  def logout(self):
+    cookie = self.request.cookies.get('session', None)
+    if cookie:
+      session = UserSession.get_from_cookie(cookie)
+      if session:
+        session.delete()
+
+    self.redirect('/')
+
+
+  def getAuthdStatus(self):
+    user_token = UserToken.get_from_cookie(self.request.cookies.get('session', None))
+    is_authd = False
+    name = ''
+    settingsSummary = ''
+    settingsLink = ''
+    if user_token is not None and user_token.fs_id:
+      client = utils.makeFoursquareClient(user_token.token)
+      try:
+        user = client.users()['user']
+        tokenId = user['id']
+        if (tokenId != user_token.fs_id):
+          is_authd = False
+          user_token.delete()
+        else:
+          is_authd = True
+          name = (user.get('firstName', '') + ' ' + user.get('lastName', '')).strip(),
+          settingsSummary = self.getPermissionsSummary(user_token.fs_id)
+          settingsLink = "/settings?userId=%s&access_token=%s" % (user_token.fs_id, user_token.token)
+
+      except InvalidAuth:
+        user_token.delete()
+
+    self.response.out.write(json.dumps({'connected': is_authd,
+                                        'name': name,
+                                        'settingsSummary': settingsSummary,
+                                        'settingsLink' : settingsLink}))
+
 
   def getAllowedFriendsJson(self):
     userId = self.request.get('userId')
