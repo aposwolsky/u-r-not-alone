@@ -53,7 +53,7 @@ class OAuth(webapp.RequestHandler):
     except OAuthConnectDeniedException:
       self.redirect(CONFIG['auth_denied_uri'])
       return
-    except OAuthConnectErrorException:
+    except Exception:
       path = os.path.join(os.path.dirname(__file__),
                           'templates/connect_error.html')
       self.response.out.write(template.render(path, {'name': CONFIG['site_name']}))
