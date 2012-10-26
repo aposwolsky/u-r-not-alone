@@ -24,9 +24,9 @@ CONFIG = {
   # AppEngine debug mode
   'debug': True,
   # These can either be a path (on this server), or an external URI
-  'auth_success_uri_desktop': '/',
-  'auth_success_uri_mobile': '/',
-  'auth_denied_uri': '/',
+  'auth_success_uri_desktop': 'http://www.herewithfriends.com',
+  'auth_success_uri_mobile': 'http://www.herewithfriends.com',
+  'auth_denied_uri': 'http://www.herewithfriends.com',
   # Application Level Configuration
   # Feel free to add new config parameters here...
 }
