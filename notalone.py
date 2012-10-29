@@ -75,10 +75,24 @@ class NotAlone(webapp.RequestHandler):
       if session:
         session.delete()
 
-    self.redirect('/')
+    isMobile = utils.isMobileUserAgent(self.request.headers['User-Agent'])
+    redirect_uri = CONFIG['auth_success_uri_mobile'] if isMobile else CONFIG['auth_success_uri_desktop']
+    self.redirect(redirect_uri)
 
 
   def getAuthdStatus(self):
+
+    # Allow cross domain access from http://www.herewithfriends.com and http://u-r-not-alone.appspot.com
+    if (self.request.headers.get('Origin') == "http://www.herewithfriends.com"
+        and self.request.headers.get('Host') == "u-r-not-alone.appspot.com"):
+      self.response.headers.add_header("Access-Control-Allow-Origin", "http://www.herewithfriends.com")
+      self.response.headers.add_header("Access-Control-Allow-Credentials", "true")
+
+    elif (self.request.headers.get('Origin') == "http://u-r-not-alone.appspot.com"
+          and self.request.headers.get('Host') == "u-r-not-alone.appspot.com"):
+      self.response.headers.add_header("Access-Control-Allow-Origin", "http://u-r-not-alone.appspot.com")
+      self.response.headers.add_header("Access-Control-Allow-Credentials", "true")
+
     user_token = UserToken.get_from_cookie(self.request.cookies.get('session', None))
     is_authd = False
     name = ''
@@ -96,7 +110,8 @@ class NotAlone(webapp.RequestHandler):
           is_authd = True
           name = (user.get('firstName', '') + ' ' + user.get('lastName', '')).strip(),
           settingsSummary = self.getPermissionsSummary(user_token.fs_id)
-          settingsLink = "/settings?userId=%s&access_token=%s" % (user_token.fs_id, user_token.token)
+          settingsLink = "%s/settings?userId=%s&access_token=%s" % (
+                          utils.getServer(), user_token.fs_id, user_token.token)
 
       except InvalidAuth:
         user_token.delete()

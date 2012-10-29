@@ -40,6 +40,9 @@ handlers:
 - url: /resources
   static_dir: resources
 
+- url: /
+  script: main.py
+
 - url: /.*
   script: main.py
   secure: always

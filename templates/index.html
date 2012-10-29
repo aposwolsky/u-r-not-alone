@@ -13,7 +13,10 @@
       client_id = "{{ client_id }}";
 
       $.ajax({
-        url: 'isAuthd',
+        url: 'https://u-r-not-alone.appspot.com/isAuthd',
+        xhrFields: {
+          withCredentials: true
+        },
         cache: false,
         dataType: "json",
       }).done(_.bind(function(result) {
@@ -85,9 +88,15 @@
     </div>
     <div class="authed" style="display: none;">
       <h3>Connected</h3>
-      <div>Welcome <span id="connectedName"></span>! <a id="logoutLink" rel="external" href="logout">(Not You)</a></div>
+      <div>Welcome
+        <span id="connectedName"></span>!
+        <a id="logoutLink" rel="external" href="https://u-r-not-alone.appspot.com/logout">(Not You)</a>
+      </div>
       <div class="settingsButton">
-        <a id="settingsLink" rel="external" href="settings" data-role="button" data-mini="true" data-icon="gear">Settings</a>
+        <a id="settingsLink" rel="external" href="https://u-r-not-alone.appspot.com/settings"
+           data-role="button" data-mini="true" data-icon="gear">
+          Settings
+        </a>
       </div>
       <div id="connectedSettingsText" class="settingsText"></div>
     </div>
