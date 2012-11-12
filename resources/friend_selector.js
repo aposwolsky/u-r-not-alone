@@ -1,5 +1,7 @@
 // Context precondition:
 // expects this.selected to contain a list of friend objects selected
+//         this.maxSelectable contains the max number of friends allowed
+//         this.reachedMaxSelected indicates whether the max number of friends have been selected
 //         this.allFriends contains all possible friends
 //         this.friendChoiceSelection will contain the option selected when on the settings screen
 
@@ -80,7 +82,18 @@ function updateSelectedInformation() {
   submitButton.text("Check them in! (" + numSelected + " selected)").button("refresh");
   var selectedContainer = $('#selectedContainer');
   selectedContainer.empty();
-
+  if (numSelected >= this.maxSelectable) {
+    this.reachedMaxSelected = true;
+    _.each($('#friendList').find('.ui-checkbox'), function(checkboxElement) {
+      var $checkboxElement = $(checkboxElement);
+      if ($checkboxElement.find('.ui-icon-checkbox-off').length > 0) {
+        $checkboxElement.addClass('ui-disabled');
+      }
+    })
+  } else if (this.reachedMaxSelected) {
+    this.reachedMaxSelected = false;
+    $('#friendList').find('.ui-checkbox').removeClass('ui-disabled');
+  }
   if (numSelected > 0) {
     var names = _(this.selected).map(function(x){return x.name;}, this).join(", ");
     selectedContainer.append(names);
@@ -126,6 +139,8 @@ function removeFriend(userId) {
 
 function initializeFriendCheckinPage() {
   this.selected = [];
+  this.maxSelectable = 5; // Used to disallow a user checking in too many users at once.
+  this.reachedMaxSelected = false;
   var listContainer = $('#friendList');
   var loadingContainer = $('#friendsLoading');
   var loadedContainer = $('#friendsLoaded');
@@ -165,7 +180,7 @@ function initializeFriendCheckinPage() {
     }, this);
     $(".ui-page").trigger("create"); // formats the checkboxes
 
-    _.each(result.mentions, function(mentionedId) {
+    _.each(result.mentions.slice(0, this.maxSelectable), function(mentionedId) {
       addFriend(mentionedId);
     }, this);
 
@@ -203,6 +218,8 @@ function initializeFriendCheckinPage() {
 
 function initializeSettingsPage() {
   this.selected = [];
+  this.maxSelectable = 10000;
+  this.reachedMaxSelected = false;
   var listContainer = $('#friendList');
   var loadingContainer = $('#settingsLoading');
   var loadedContainer = $('#settingsLoaded');
