@@ -4,8 +4,8 @@ import random
 import urllib
 
 from google.appengine.api import taskqueue
-from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
+import webapp2
 
 try: import simplejson as json
 except ImportError: import json
@@ -16,7 +16,7 @@ import utils
 
 from foursquare import InvalidAuth
 
-class NotAlone(webapp.RequestHandler):
+class NotAlone(webapp2.RequestHandler):
 
   def getUserIdFromToken(self, token):
     try:
