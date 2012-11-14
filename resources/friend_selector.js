@@ -119,10 +119,12 @@ function addFriend(userId) {
     this.selected.push(friendSelected);
     // Sort the selected in the order of allFriends by doing difference
     this.selected = _(this.allFriends).intersect(this.selected);
-    // Update checkbox if necessary
-    if (!$('#' + userId).prop("checked")) {
-      $('#' + userId).prop("checked", true).checkboxradio("refresh");
-    }
+    // Update checkbox
+    // Previously we only did the refresh if (!$('#' + userId).prop("checked"))
+    // We now always refresh the checkboxradio as there is a race condition
+    // where if the user touches right between two friends it will toggle prop("checked")
+    // on both, but only visually update the appearance of one of them.
+    $('#' + userId).prop("checked", true).checkboxradio("refresh");
     updateSelectedInformation();
   }
 };
@@ -130,7 +132,11 @@ function addFriend(userId) {
 // precondition: this.selected contains a list of friend objects selected
 function removeFriend(userId) {
   this.selected = _(this.selected).filter(function(x) {return x.id != userId;}, this);
-  // Update checkbox if necessary
+  // Update checkbox
+  // Previously we only did the refresh if ($('#' + userId).prop("checked"))
+  // We now always refresh the checkboxradio as there is a race condition
+  // where if the user touches right between two friends it will toggle prop("checked")
+  // on both, but only visually update the appearance of one of them.
   if ($('#' + userId).prop("checked")) {
     $('#' + userId).prop("checked", false).checkboxradio("refresh");
   }
