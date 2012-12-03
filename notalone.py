@@ -323,7 +323,7 @@ class NotAlone(webapp2.RequestHandler):
         self.error(400)
         return
       successComment = 'Check-in by %s.' % sourceName
-      newCheckin = dict({'venueId': venueId, 'broadcast': 'public'})
+      newCheckin = dict({'venueId': venueId, 'broadcast': 'public', 'shout': successComment})
       if 'event' in checkin_json:
         newCheckin['eventId'] = checkin_json['event']['id']
 
@@ -350,10 +350,11 @@ class NotAlone(webapp2.RequestHandler):
             history.target_fs_name = (friendObj.get('firstName', '') + ' ' + friendObj.get('lastName', '')).strip()
             history.put()
 
-            self.makeContentInfo( checkin_json = friendCheckin,
-                                  content = json.dumps({'checkinFrom': sourceName}),
-                                  text = successComment,
-                                  post = True)
+            ## successComment moved to shout instead of post due to complaints
+            # self.makeContentInfo( checkin_json = friendCheckin,
+            #                       content = json.dumps({'checkinFrom': sourceName}),
+            #                       text = successComment,
+            #                       post = True)
           except InvalidAuth:
             # If a user disconnects the app, we can then have an invalid token
             logging.info('invalid oauth - deleting token for %s' % friendObj['id'])
