@@ -3,6 +3,7 @@ import os
 import random
 import urllib
 
+from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 from google.appengine.ext.webapp import template
 import webapp2
@@ -26,15 +27,47 @@ class NotAlone(webapp2.RequestHandler):
     except InvalidAuth:
       return None
 
+
+  # Formats a token for storage in cache.
+  # We do not store 'None' in the cache, so we convert to a string
+  def tokenToCache(self, token):
+    if (token is None):
+      return 'user_not_connected'
+    else:
+      return token
+
+
+  # Formats a user token for storage in cache.
+  # We do not store 'None' in the cache, so we convert from a string
+  def cacheToToken(self, cacheValue):
+    if (cacheValue == 'user_not_connected'):
+      return None
+    else:
+      return cacheValue
+
+
+  def fetchAccessToken(self, userId):
+    tokenCacheValue = memcache.get('token:%s' % userId)
+    if tokenCacheValue is not None:
+      return self.cacheToToken(tokenCacheValue)
+    else:
+      user_token = UserToken.get_by_fs_id(userId)
+      token = user_token.token if user_token else None
+
+      if not memcache.set('token:%s' % userId, self.tokenToCache(token)):
+        logging.error('Memcache set failed on token for %s' % userId)
+
+      return token
+
+
   def verifiedAccessToken(self, userId, suppliedToken):
-    request = UserToken.all()
-    request.filter("fs_id = ", str(userId))
-    savedTokenObj = request.get()
-    if (savedTokenObj and savedTokenObj.token == suppliedToken):
+    savedToken = self.fetchAccessToken(userId)
+    if (savedToken == suppliedToken):
       return suppliedToken
     elif (self.getUserIdFromToken(suppliedToken) == userId):
-      # save updated token
-      if savedTokenObj:
+      # save updated token if record exists, or create a new record
+      savedTokenObj = UserToken.get_by_fs_id(userId)
+      if savedTokenObj is not None:
         newToken = savedTokenObj
       else:
         newToken = UserToken()
@@ -42,16 +75,15 @@ class NotAlone(webapp2.RequestHandler):
       newToken.token = suppliedToken
       newToken.fs_id = userId
       newToken.put()
+
+      if not memcache.set('token:%s' % userId, self.tokenToCache(suppliedToken)):
+        logging.error('Memcache set failed on token for %s' % user_id)
+        memcache.delete('token:%s' % userId)
+
       return suppliedToken
     else:
       return None
 
-
-  def fetchAccessToken(self, user_id):
-    request = UserToken.all()
-    request.filter("fs_id = ", str(user_id))
-    user_token = request.get()
-    return user_token.token if user_token else None
 
   #
   # Get
@@ -137,7 +169,7 @@ class NotAlone(webapp2.RequestHandler):
         {'name': (friend.get('firstName', '') + ' ' + friend.get('lastName', '')).strip(),
          'id': friend['id']}
          for friend in friends if (friend.get('relationship', 'friend') == 'friend')
-                               and (self.getUserToken(userId, friend['id']) is not None)]
+                               and (self.getFriendUserToken(userId, friend['id']) is not None)]
       friendInfoSorted = sorted(friendInfo, key=lambda x: x['name'].upper())
 
       if 'entities' in checkin_json:
@@ -157,11 +189,21 @@ class NotAlone(webapp2.RequestHandler):
   # Gets the security settings for userId
   #
   def getPermissions(self, userId):
-    settingsObj = UserSettings.get_by_fs_id(userId)
-    if settingsObj:
-      return json.loads(settingsObj.permissions)
+    permissionsCacheValue = memcache.get('settings:%s' % userId)
+    if permissionsCacheValue is not None:
+      return permissionsCacheValue
     else:
-      return {'allowAll': True, 'authorizedFriends': []}
+      # Default permissions is to authorize all friends
+      permissions = {'allowAll': True, 'authorizedFriends': []}
+
+      settingsObj = UserSettings.get_by_fs_id(userId)
+      if settingsObj:
+        permissions = json.loads(settingsObj.permissions)
+
+      if not memcache.set('settings:%s' % userId, permissions):
+        logging.error('Memcache set failed on settings for %s' % userId)
+
+      return permissions
 
   #
   # Permissions Summary
@@ -202,8 +244,8 @@ class NotAlone(webapp2.RequestHandler):
   # Precondition: given two friends checkinSource and checkinTarget
   # returns a token for checkinTarget if checkinSource is allowed
   #
-  def getUserToken(self, checkinSource, checkinTarget):
-    token = UserToken.get_by_fs_id(checkinTarget)
+  def getFriendUserToken(self, checkinSource, checkinTarget):
+    token = self.fetchAccessToken(checkinTarget)
     if (token is not None and self.isAllowed(checkinSource, checkinTarget)):
       return token
     else:
@@ -270,6 +312,10 @@ class NotAlone(webapp2.RequestHandler):
       settingsObj.permissions = json.dumps(permissions)
       settingsObj.put()
 
+      if not memcache.set('settings:%s' % userId, permissions):
+        logging.error('Memcache set failed on settings for %s' % userId)
+        memcache.delete('settings:%s' % userId)
+
       logging.info('%s changed settings to: %s' % (settingsObj.fs_id, settingsObj.permissions))
       self.response.out.write(json.dumps({'status': 'ok'}))
     else:
@@ -333,10 +379,10 @@ class NotAlone(webapp2.RequestHandler):
 
       for selectedUserId in selectedUserIds:
         matching = [friend for friend in allowedFriends if friend['id'] == selectedUserId]
-        tokenObj = self.getUserToken(sourceId, selectedUserId)
-        if (len(matching) > 0 and tokenObj is not None):
+        token = self.getFriendUserToken(sourceId, selectedUserId)
+        if (len(matching) > 0 and token is not None):
           friendObj = matching[0]
-          client.set_access_token(tokenObj.token)
+          client.set_access_token(token)
           try:
             friendCheckin = client.checkins.add(newCheckin)['checkin']
             if 'user' not in friendCheckin:
@@ -358,8 +404,12 @@ class NotAlone(webapp2.RequestHandler):
           except InvalidAuth:
             # If a user disconnects the app, we can then have an invalid token
             logging.info('invalid oauth - deleting token for %s' % friendObj['id'])
-            tokenObj.delete()
             disconnectedNames.append(friendObj['firstName'])
+            tokenObj = UserToken.get_by_fs_id(selectedUserId)
+            if (tokenObj is not None):
+              tokenObj.delete()
+              memcache.delete('token:%s' % selectedUserId)
+
           except Exception as inst:
             logging.error('Failed to check in user %s-%s' % (friendObj['firstName'], friendObj['id']))
 

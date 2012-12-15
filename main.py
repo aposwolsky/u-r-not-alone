@@ -16,6 +16,7 @@ from model import UserSession, UserToken
 from notalone import NotAlone
 import utils
 
+from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 from google.appengine.ext.webapp import template
 import webapp2
@@ -71,6 +72,10 @@ class OAuth(webapp2.RequestHandler):
     token.token = access_token
     token.fs_id = fs_user_id
     token.put()
+
+    if not memcache.set('token:%s' % fs_user_id, token):
+      logging.error('Memcache set during oauth on token for %s' % fs_user_id)
+      memcache.delete('token:%s' % fs_user_id)
 
     session = UserSession.get_or_create_session(fs_user_id)
     cookie = Cookie.SimpleCookie()
