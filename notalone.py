@@ -54,7 +54,7 @@ class NotAlone(webapp2.RequestHandler):
       user_token = UserToken.get_by_fs_id(userId)
       token = user_token.token if user_token else None
 
-      if not memcache.set('token:%s' % userId, self.tokenToCache(token)):
+      if not memcache.set('token:%s' % userId, self.tokenToCache(token), 86400):
         logging.error('Memcache set failed on token for %s' % userId)
 
       return token
@@ -76,7 +76,7 @@ class NotAlone(webapp2.RequestHandler):
       newToken.fs_id = userId
       newToken.put()
 
-      if not memcache.set('token:%s' % userId, self.tokenToCache(suppliedToken)):
+      if not memcache.set('token:%s' % userId, self.tokenToCache(suppliedToken), 86400):
         logging.error('Memcache set failed on token for %s' % user_id)
         memcache.delete('token:%s' % userId)
 
@@ -200,7 +200,7 @@ class NotAlone(webapp2.RequestHandler):
       if settingsObj:
         permissions = json.loads(settingsObj.permissions)
 
-      if not memcache.set('settings:%s' % userId, permissions):
+      if not memcache.set('settings:%s' % userId, permissions, 86400):
         logging.error('Memcache set failed on settings for %s' % userId)
 
       return permissions
@@ -312,7 +312,7 @@ class NotAlone(webapp2.RequestHandler):
       settingsObj.permissions = json.dumps(permissions)
       settingsObj.put()
 
-      if not memcache.set('settings:%s' % userId, permissions):
+      if not memcache.set('settings:%s' % userId, permissions, 86400):
         logging.error('Memcache set failed on settings for %s' % userId)
         memcache.delete('settings:%s' % userId)
 

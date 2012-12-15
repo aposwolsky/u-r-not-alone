@@ -73,7 +73,7 @@ class OAuth(webapp2.RequestHandler):
     token.fs_id = fs_user_id
     token.put()
 
-    if not memcache.set('token:%s' % fs_user_id, token):
+    if not memcache.set('token:%s' % fs_user_id, access_token, 86400):
       logging.error('Memcache set during oauth on token for %s' % fs_user_id)
       memcache.delete('token:%s' % fs_user_id)
 
