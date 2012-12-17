@@ -406,7 +406,7 @@ class NotAlone(webapp2.RequestHandler):
         logging.error("User %s attempted to access checkin for user %s" % (userId, sourceId))
         self.error(400)
         return
-      successComment = 'Check-in by %s.' % sourceName
+      successComment = 'Check-in by %s.' % sourceName.encode('utf-8')
       newCheckin = dict({'venueId': venueId, 'broadcast': 'public', 'shout': successComment})
       if 'event' in checkin_json:
         newCheckin['eventId'] = checkin_json['event']['id']
