@@ -449,7 +449,7 @@ class NotAlone(webapp2.RequestHandler):
               memcache.delete('token:%s' % selectedUserId)
 
           except Exception as inst:
-            logging.error('Failed to check in user %s-%s' % (friendObj['firstName'], friendObj['id']))
+            logging.error('Failed to check in user %s-%s: %s' % (friendObj['firstName'], friendObj['id'], str(inst)))
 
       client.set_access_token(access_token) # restore token to original user
       successNamesStr = ", ".join(successNames)
