@@ -19,6 +19,44 @@ from foursquare import InvalidAuth
 
 class NotAlone(webapp2.RequestHandler):
 
+
+  # We want to only save the core/critical part of the checkin
+  def checkinToCore(self, checkinJson):
+    coreCheckin = {}
+    coreCheckin['id'] = checkinJson['id']
+    coreCheckin['venue'] = {'id': checkinJson['venue']['id']}
+    coreCheckin['user'] = {'id': checkinJson['user']['id'], 'firstName': checkinJson['user']['firstName']}
+    if 'event' in checkinJson:
+      coreCheckin['event'] = {'id': checkinJson['event']['id']}
+    if 'entities' in checkinJson:
+      coreCheckin['entities'] = checkinJson['entities']
+    return coreCheckin
+
+
+  # Get checkin by either (a) cached by checkinId, (b) saved by content reply, or (c) via Foursquare request
+  def getCoreCheckin(self, checkinId, client):
+    checkinCacheValue = memcache.get('checkin:%s' % checkinId)
+    if checkinCacheValue is not None:
+      return checkinCacheValue
+    else:
+      contentInfo = ContentInfo.get_checkin_reply(checkinId)
+      content_json = {}
+      if contentInfo is not None:
+        content_json = json.loads(contentInfo.content)
+
+      coreCheckin = {}
+      if (content_json is not None and 'coreCheckin' in content_json):
+        coreCheckin = content_json['coreCheckin']
+      else:
+        coreCheckin = self.checkinToCore(client.checkins(checkinId)['checkin'])
+
+      # Cache checkin for 1 hour
+      if not memcache.set('checkin:%s' % checkinId, coreCheckin, 3600):
+        logging.error('Memcache set failed on checkin %s' % checkinId)
+
+      return coreCheckin
+
+
   def getUserIdFromToken(self, token):
     try:
       client = utils.makeFoursquareClient(token)
@@ -162,7 +200,7 @@ class NotAlone(webapp2.RequestHandler):
     access_token = self.verifiedAccessToken(userId, token)
     if (access_token):
       client = utils.makeFoursquareClient(access_token)
-      checkin_json = client.checkins(checkinId)['checkin']
+      checkin_json = self.getCoreCheckin(checkinId, client)
       venue_id = checkin_json['venue']['id']
       friends = [friend for friend in client.users.friends()['friends']['items']]
       friendInfo = [
@@ -360,7 +398,7 @@ class NotAlone(webapp2.RequestHandler):
       logging.debug('selected = %s' % selectedUserParam)
       selectedUserIds = selectedUserParam.split('-')
 
-      checkin_json = client.checkins(checkinId)['checkin']
+      checkin_json = self.getCoreCheckin(checkinId, client)
       venueId = checkin_json['venue']['id']
       sourceName = checkin_json['user']['firstName']
       sourceId = checkin_json['user']['id']
@@ -438,18 +476,15 @@ class NotAlone(webapp2.RequestHandler):
   def checkinTaskQueue(self, client, checkin_json, userId, checkinId, access_token):
     venue_id = checkin_json['venue']['id']
     venue_json = client.venues(venue_id)['venue']
-    if 'entities' in checkin_json:
-      mentionedIds = [entity['id'] for entity in checkin_json['entities'] if entity['type'] == 'user']
-    else:
-      mentionedIds = []
 
     urlParams = { 'userId' : userId, 'checkinId' : checkinId, 'access_token' : access_token }
     url = '%s/content?%s' % (utils.getServer(), urllib.urlencode(urlParams))
 
     message = 'Check in your friends'
+    coreCheckin = self.checkinToCore(checkin_json)
 
     self.makeContentInfo( checkin_json = checkin_json,
-                          content = json.dumps({'mentions': mentionedIds}),
+                          content = json.dumps({'coreCheckin': coreCheckin}),
                           url = url,
                           text = message,
                           reply = True)

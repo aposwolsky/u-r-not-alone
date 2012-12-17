@@ -49,6 +49,11 @@ class ContentInfo(db.Model):
   reply_id = db.TextProperty()
   post_id = db.TextProperty()
 
+  @staticmethod
+  def get_checkin_reply(checkin_id):
+    # To avoid index error, we get the reply by filtering for rows where the post_id is NULL
+    return ContentInfo().all().filter('checkin_id =', checkin_id).filter('post_id =', None).get()
+
 class UserSettings(db.Model):
   """Settings for each user"""
   fs_id = db.StringProperty()
