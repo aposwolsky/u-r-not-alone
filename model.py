@@ -33,6 +33,16 @@ class UserToken(db.Model):
     return UserToken().all().filter('fs_id =', fs_id).get()
 
   @staticmethod
+  def fetch_by_fs_ids(ids):
+    result = []
+    # IN query limited to 30
+    # https://developers.google.com/appengine/docs/python/datastore/queries#Retrieving_Results
+    for i in range(0, len(ids), 30):
+      chunk = ids[i: i + 30]
+      result += UserToken().all().filter('fs_id IN', chunk).run(limit = 30)
+    return result
+
+  @staticmethod
   def get_from_cookie(cookie):
     session = UserSession.get_from_cookie(cookie)
     if session:
@@ -62,6 +72,16 @@ class UserSettings(db.Model):
   @staticmethod
   def get_by_fs_id(fs_id):
     return UserSettings().all().filter('fs_id =', fs_id).get()
+
+  @staticmethod
+  def fetch_by_fs_ids(ids):
+    result = []
+    # IN query limited to 30
+    # https://developers.google.com/appengine/docs/python/datastore/queries#Retrieving_Results
+    for i in range(0, len(ids), 30):
+      chunk = ids[i: i + 30]
+      result += UserSettings().all().filter('fs_id IN', chunk).run(limit = 30)
+    return result
 
 class CheckinHistory(db.Model):
   """History information of checkins generated."""

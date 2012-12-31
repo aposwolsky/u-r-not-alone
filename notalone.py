@@ -83,20 +83,26 @@ class NotAlone(webapp2.RequestHandler):
     else:
       return cacheValue
 
-
   def fetchAccessToken(self, userId):
-    tokenCacheValue = memcache.get('token:%s' % userId)
-    if tokenCacheValue is not None:
-      return self.cacheToToken(tokenCacheValue)
-    else:
-      user_token = UserToken.get_by_fs_id(userId)
-      token = user_token.token if user_token else None
+    return self.fetchAccessTokens([userId]).get(userId)
 
-      if not memcache.set('token:%s' % userId, self.tokenToCache(token), 86400):
-        logging.error('Memcache set failed on token for %s' % userId)
+  def fetchAccessTokens(self, userIds):
+    dictFromCache = memcache.get_multi(userIds, key_prefix="token:")
+    idsInCache = dictFromCache.keys()
+    cachedTokens = {id : self.cacheToToken(dictFromCache[id]) for id in idsInCache}
 
-      return token
+    idsMissingFromCache = list(set(userIds) - set(idsInCache))
+    fetchedTokens = {x.fs_id : x.token for x in UserToken.fetch_by_fs_ids(idsMissingFromCache)}
 
+    if idsMissingFromCache:
+      # Add all missing ones that we just fetched to the cache
+      failedKeys = memcache.set_multi({id : self.tokenToCache(fetchedTokens.get(id)) for id in idsMissingFromCache},
+                                      key_prefix="token:", time=86400)
+      if failedKeys:
+        logging.error('Memcache set failed on tokens for %s' % ', '.join(failedKeys))
+
+    cachedTokens.update(fetchedTokens)
+    return cachedTokens
 
   def verifiedAccessToken(self, userId, suppliedToken):
     savedToken = self.fetchAccessToken(userId)
@@ -202,12 +208,13 @@ class NotAlone(webapp2.RequestHandler):
       client = utils.makeFoursquareClient(access_token)
       checkin_json = self.getCoreCheckin(checkinId, client)
       venue_id = checkin_json['venue']['id']
-      friends = [friend for friend in client.users.friends()['friends']['items']]
+      friends = client.users.friends()['friends']['items']
+      allFriendIds = [friend['id'] for friend in friends if (friend.get('relationship', 'friend') == 'friend')]
+      allowedFriendIds = self.getFriendTokens(userId, allFriendIds).keys()
       friendInfo = [
         {'name': (friend.get('firstName', '') + ' ' + friend.get('lastName', '')).strip(),
          'id': friend['id']}
-         for friend in friends if (friend.get('relationship', 'friend') == 'friend')
-                               and (self.getFriendUserToken(userId, friend['id']) is not None)]
+         for friend in friends if friend['id'] in allowedFriendIds]
       friendInfoSorted = sorted(friendInfo, key=lambda x: x['name'].upper())
 
       if 'entities' in checkin_json:
@@ -227,21 +234,30 @@ class NotAlone(webapp2.RequestHandler):
   # Gets the security settings for userId
   #
   def getPermissions(self, userId):
-    permissionsCacheValue = memcache.get('settings:%s' % userId)
-    if permissionsCacheValue is not None:
-      return permissionsCacheValue
-    else:
-      # Default permissions is to authorize all friends
-      permissions = {'allowAll': True, 'authorizedFriends': []}
+    return self.fetchPermissions([userId]).get(userId)
 
-      settingsObj = UserSettings.get_by_fs_id(userId)
-      if settingsObj:
-        permissions = json.loads(settingsObj.permissions)
+  #
+  # Gets the security settings for a list of user ids
+  #
+  def fetchPermissions(self, userIds):
+    cachedPermissions = memcache.get_multi(userIds, key_prefix="settings:")
 
-      if not memcache.set('settings:%s' % userId, permissions, 86400):
-        logging.error('Memcache set failed on settings for %s' % userId)
+    idsMissingFromCache = list(set(userIds) - set(cachedPermissions.keys()))
+    fetchedPermissions = {x.fs_id : json.loads(x.permissions) for x in UserSettings.fetch_by_fs_ids(idsMissingFromCache)}
+    # If no permissions are set, the default is to allow all
+    defaultedPermissions = {id : {'allowAll': True, 'authorizedFriends': []} for id in idsMissingFromCache
+      if fetchedPermissions.get(id) is None
+    }
+    fetchedPermissions.update(defaultedPermissions)
 
-      return permissions
+    if idsMissingFromCache:
+      # Add all missing ones that we just fetched to the cache
+      failedKeys = memcache.set_multi(fetchedPermissions, key_prefix="settings:", time=86400)
+      if failedKeys:
+        logging.error('Memcache set failed on settings for %s' % ', '.join(failedKeys))
+
+    cachedPermissions.update(fetchedPermissions)
+    return cachedPermissions
 
   #
   # Permissions Summary
@@ -264,30 +280,17 @@ class NotAlone(webapp2.RequestHandler):
 
 
   #
-  # Precondition: given two friends checkinSource and checkinTarget
-  # returns whether checkinSource is allowed to check in checkinTarget
+  # Precondition: given user and a list of friends
+  # returns a dictionary {friend: token} for all friends that the user is allowed
   #
-  def isAllowed(self, checkinSource, checkinTarget):
-    try:
-      targetPermissions = self.getPermissions(checkinTarget)
-      if (targetPermissions.get('allowAll') or checkinSource in targetPermissions.get('authorizedFriends')):
-        return True
-      else:
-        return False
-    except Exception:
-      logging.error('Failed to check whether %s can check in %s' % (checkinSource, checkinTarget))
-      return False
-
-  #
-  # Precondition: given two friends checkinSource and checkinTarget
-  # returns a token for checkinTarget if checkinSource is allowed
-  #
-  def getFriendUserToken(self, checkinSource, checkinTarget):
-    token = self.fetchAccessToken(checkinTarget)
-    if (token is not None and self.isAllowed(checkinSource, checkinTarget)):
-      return token
-    else:
-      return None
+  def getFriendTokens(self, userId, friendIds):
+    userTokenDict = self.fetchAccessTokens(friendIds)
+    friendsWithTokens = [id for id in userTokenDict.keys() if userTokenDict[id] is not None]
+    friendsPermissions = self.fetchPermissions(friendsWithTokens)
+    return {id : userTokenDict.get(id) for id in friendsWithTokens
+      if friendsPermissions.get(id) is not None
+      and (friendsPermissions.get(id).get('allowAll') or userId in friendsPermissions.get(id).get('authorizedFriends'))
+    }
 
 
   def getUserSettingsJson(self):
@@ -411,13 +414,16 @@ class NotAlone(webapp2.RequestHandler):
       if 'event' in checkin_json:
         newCheckin['eventId'] = checkin_json['event']['id']
 
-      allowedFriends = client.users.friends()['friends']['items']
+      friends = client.users.friends()['friends']['items']
+      allFriendIds = [friend['id'] for friend in friends if (friend.get('relationship', 'friend') == 'friend')]
+      allowedFriendTokens = self.getFriendTokens(userId, allFriendIds)
+
       successNames = []
       disconnectedNames = []
 
       for selectedUserId in selectedUserIds:
-        matching = [friend for friend in allowedFriends if friend['id'] == selectedUserId]
-        token = self.getFriendUserToken(sourceId, selectedUserId)
+        matching = [friend for friend in friends if friend['id'] == selectedUserId]
+        token = allowedFriendTokens.get(selectedUserId)
         if (len(matching) > 0 and token is not None):
           friendObj = matching[0]
           client.set_access_token(token)
@@ -475,7 +481,6 @@ class NotAlone(webapp2.RequestHandler):
 
   def checkinTaskQueue(self, client, checkin_json, userId, checkinId, access_token):
     venue_id = checkin_json['venue']['id']
-    venue_json = client.venues(venue_id)['venue']
 
     urlParams = { 'userId' : userId, 'checkinId' : checkinId, 'access_token' : access_token }
     url = '%s/content?%s' % (utils.getServer(), urllib.urlencode(urlParams))
