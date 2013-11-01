@@ -1,12 +1,13 @@
-application: u-r-not-alone
+application: herewithfriends
 version: 2
 runtime: python27
 api_version: 1
 threadsafe: true
 
-## Uncomment to enable App Engine appstats
-# builtins:
-# - appstats: on
+## Uncomment to enable App Engine appstats and remote api
+## builtins:
+## - remote_api: on
+## - appstats: on
 
 handlers:
 

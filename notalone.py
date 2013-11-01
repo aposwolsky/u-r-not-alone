@@ -158,15 +158,15 @@ class NotAlone(webapp2.RequestHandler):
 
   def getAuthdStatus(self):
 
-    # Allow cross domain access from http://www.herewithfriends.com and http://u-r-not-alone.appspot.com
+    # Allow cross domain access from http://www.herewithfriends.com and http://herewithfriends.appspot.com
     if (self.request.headers.get('Origin') == "http://www.herewithfriends.com"
-        and self.request.headers.get('Host') == "u-r-not-alone.appspot.com"):
+        and self.request.headers.get('Host') == "herewithfriends.appspot.com"):
       self.response.headers.add_header("Access-Control-Allow-Origin", "http://www.herewithfriends.com")
       self.response.headers.add_header("Access-Control-Allow-Credentials", "true")
 
-    elif (self.request.headers.get('Origin') == "http://u-r-not-alone.appspot.com"
-          and self.request.headers.get('Host') == "u-r-not-alone.appspot.com"):
-      self.response.headers.add_header("Access-Control-Allow-Origin", "http://u-r-not-alone.appspot.com")
+    elif (self.request.headers.get('Origin') == "http://herewithfriends.appspot.com"
+          and self.request.headers.get('Host') == "herewithfriends.appspot.com"):
+      self.response.headers.add_header("Access-Control-Allow-Origin", "http://herewithfriends.appspot.com")
       self.response.headers.add_header("Access-Control-Allow-Credentials", "true")
 
     user_token = UserToken.get_from_cookie(self.request.cookies.get('session', None))
