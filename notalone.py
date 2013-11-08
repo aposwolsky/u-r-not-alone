@@ -366,23 +366,27 @@ class NotAlone(webapp2.RequestHandler):
   # Post
   #
   def post(self):
-    if self.request.path.startswith('/_checkin') and self.request.get('checkin'):
-      # Parse floats as string so we don't lose lat/lng precision. We can use Decimal later.
-      checkin_json = json.loads(self.request.get('checkin'),
-                                parse_float=str)
-      user_id = checkin_json['user']['id']
-      access_token = self.fetchAccessToken(user_id)
-      if not access_token:
-        logging.warning('Received push for unknown user_id {}'.format(user_id))
-        return
-      client = utils.makeFoursquareClient(access_token)
-      return self.checkinTaskQueue(client, checkin_json, user_id, checkin_json.get('id'), access_token)
-    elif self.request.path.startswith('/friend-checkin'):
-      return self.friendCheckin()
-    elif self.request.path.startswith('/_friend-checkin'):
-      return self.friendCheckinTaskQueue()
-    elif self.request.path.startswith('/change-settings'):
+    # We now only handle changing settings
+    if self.request.path.startswith('/change-settings'):
       return self.changeUserSettings()
+
+    #if self.request.path.startswith('/_checkin') and self.request.get('checkin'):
+    #  # Parse floats as string so we don't lose lat/lng precision. We can use Decimal later.
+    #  checkin_json = json.loads(self.request.get('checkin'),
+    #                            parse_float=str)
+    #  user_id = checkin_json['user']['id']
+    #  access_token = self.fetchAccessToken(user_id)
+    #  if not access_token:
+    #    logging.warning('Received push for unknown user_id {}'.format(user_id))
+    #    return
+    #  client = utils.makeFoursquareClient(access_token)
+    #  return self.checkinTaskQueue(client, checkin_json, user_id, checkin_json.get('id'), access_token)
+    #elif self.request.path.startswith('/friend-checkin'):
+    #  return self.friendCheckin()
+    #elif self.request.path.startswith('/_friend-checkin'):
+    #  return self.friendCheckinTaskQueue()
+    #elif self.request.path.startswith('/change-settings'):
+    #  return self.changeUserSettings()
 
     self.error(404)
   #

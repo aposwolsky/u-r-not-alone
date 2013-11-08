@@ -118,7 +118,7 @@ class HomePage(webapp2.RequestHandler):
 
 
 app = webapp2.WSGIApplication([('/oauth.*', OAuth),
-                               ('/checkin', ProcessCheckin),
+                               # disabled ('/checkin', ProcessCheckin),
                                ('/', HomePage),
                                ('/resources/', HomePage),
                                ('/_checkin', NotAlone),
